@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data;
-using ESRI.ArcGIS.Mobile;
-using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Client;
+using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
 
 namespace AnimalObservations

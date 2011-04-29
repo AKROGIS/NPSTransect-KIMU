@@ -1,21 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ESRI.ArcGIS.Mobile.Client;
-using ESRI.ArcGIS.Mobile.Client.Gps;
-using ESRI.ArcGIS.Mobile.Client.Pages;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
-using ESRI.ArcGIS.Mobile.MobileServices;
 using ESRI.ArcGIS.Mobile.WPF;
-using System.Diagnostics;
 
 namespace AnimalObservations
 {
