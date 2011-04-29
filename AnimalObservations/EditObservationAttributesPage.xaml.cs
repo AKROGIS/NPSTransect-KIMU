@@ -158,11 +158,7 @@ namespace AnimalObservations
             Task.AddObservation(Observation.CreateWith(Task.CurrentGpsPoint));
         }
 
-        private void AddButton_Click(object sender, RoutedEventArgs e)
-        {
-            Task.ActiveObservation.BirdGroups.Add(new BirdGroup2());
-        }
-
+        //FIXME capture the delete event in the data grid to properly dispose of the birdgroup. 
         private void RemoveButton_Click(object sender, RoutedEventArgs e)
         {
             if (gridView.SelectedIndex != -1)

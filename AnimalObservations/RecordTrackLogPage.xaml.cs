@@ -23,10 +23,6 @@ namespace AnimalObservations
     public partial class RecordTrackLogPage : MobileApplicationPage
     {
 
-        //FIXME - need to maintain an open observation queue on this page, and a means to select/edit a random open observation
-        //FIXME - need to provide a means to select any observation/birdgroup and edit that record.
-        //FIXME - editing an observation could mean the bird group location changes.
-
         private CollectTrackLogTask Task;
         private TrackLog TrackLog;
 
@@ -52,13 +48,9 @@ namespace AnimalObservations
             this.OkCommand.Text = "New Observation";
             this.ForwardCommands.Add(this.OkCommand);
 
-
             //Keyboard Events
             this.Focusable = true;
             this.Loaded += (s, e) => Keyboard.Focus(this);
-
-            //Mouse Events
-            //FIXME allow selection of observations/bird groups for attribute editing.
         }
 
 

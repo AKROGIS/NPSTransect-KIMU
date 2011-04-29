@@ -84,11 +84,7 @@
     <Compile Include="GpsPoint.cs" />
     <Compile Include="MobileUtilities.cs" />
     <Compile Include="Observation.cs" />
-    <None Include="xxRecordObservationPage.cs" />
     <Compile Include="CollectTrackLogTask.cs" />
-    <None Include="xxOldRecordObservationPage.xaml.cs">
-      <DependentUpon>xxOldRecordObservationPage.xaml</DependentUpon>
-    </None>
     <Compile Include="RecordTrackLogPage.xaml.cs">
       <DependentUpon>RecordTrackLogPage.xaml</DependentUpon>
     </Compile>
@@ -104,10 +100,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <None Include="xxOldRecordObservationPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </None>
     <Page Include="RecordTrackLogPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

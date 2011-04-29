@@ -42,12 +42,16 @@ namespace AnimalObservations
         {
             QueryFilter query = new QueryFilter(whereClause);
             FeatureDataReader data = featureLayer.GetDataReader(query);
+
+            //FIXME - this is totally broken
+            throw new NotImplementedException();
+
             //FeatureDataTable table = featureLayer.GetDataTable(query);
             //if (data.Rows.Count < 1)
             //    return null;
             //if (table.Rows.Count > 1)
                 //Ambiguous results, best to not return anything.
-                return null;
+                //return null;
             //return new Feature(table[0]);
         }
 
@@ -76,53 +80,5 @@ namespace AnimalObservations
             return domain;
         }
 
-        #region deprecated
-
-        [Obsolete]
-        internal static Feature CreateNewFeature(string featureLayerName)
-        {
-            return CreateNewFeature(featureLayerName, 0);
-        }
-
-        [Obsolete]
-        internal static Feature CreateNewFeature(string featureLayerName, int subTypeIndex)
-        {
-            FeatureLayer featureLayer = GetFeatureLayer(featureLayerName);
-            if (subTypeIndex < 0 || subTypeIndex >= MobileApplication.Current.Project.FeatureTypeDictionary[featureLayer].Count)
-                throw new ArgumentOutOfRangeException("subTypeIndex");
-            FeatureType featureType = MobileApplication.Current.Project.FeatureTypeDictionary[featureLayer][subTypeIndex];
-            return new Feature(featureType);
-        }
-
-        [Obsolete]
-        internal static Feature GetFeature(string featureLayerName, Guid guid)
-        {
-            FeatureLayer featureLayer = GetFeatureLayer(featureLayerName);
-            return GetFeature(featureLayer, guid);
-        }
-
-        [Obsolete]
-        internal static Feature GetFeature(string featureLayerName, string whereClause)
-        {
-            FeatureLayer featureLayer = GetFeatureLayer(featureLayerName);
-            return GetFeature(featureLayer, whereClause);
-        }
-
-        [Obsolete]
-        internal static IEnumerable<GlobalId> GetGlobalIds(string featureLayerName)
-        {
-            FeatureLayer featureLayer = GetFeatureLayer(featureLayerName);
-            List<GlobalId> ret = new List<GlobalId>();
-            using (FeatureDataReader data = featureLayer.GetDataReader(new QueryFilter(), EditState.Current))
-            {
-                data.Reset();
-                while (data.Read())
-                    ret.Add(data.GetGlobalId());
-                data.Close();
-            }
-            return ret;
-        }
-
-        #endregion
     }
 }

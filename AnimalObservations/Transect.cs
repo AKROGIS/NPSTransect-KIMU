@@ -45,28 +45,6 @@ namespace AnimalObservations
             return results;
         }
 
-        //internal static Transect GetNearest(Envelope extents, Coordinate coordinate)
-        //{
-        //    // Do not consider non-visible transects.
-        //    // nearest picks the current selection in the picklist of visible transects.
-        //    Debug.Assert(coordinate != null, "Fail, null coordinate in Transect.GetNearest()");
-
-        //    Geometry myLocation = new Point(coordinate);
-        //    Transect Closest = GetWithin(extents).OrderBy(transect => transect.Shape.Distance(myLocation))
-        //                                         .FirstOrDefault();
-        //    return Closest;
-        //}
-
-        //static public bool HasVisibleTransects
-        //{
-        //    get
-        //    {
-        //        if (transects == null)
-        //            LoadReadOnlyTransectsFromDB();
-        //        return transects.Count > 0;
-        //    }
-        //}
-
         static public Transect FromGuid(Guid guid)
         {
             if (transects == null)
@@ -125,35 +103,6 @@ namespace AnimalObservations
             Coordinate lastPoint = points.Last();
             return Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
         }
-
-        ////Only needed for complex transects
-        //public double CalculateBearing(Polyline line, Point point)
-        //{
-        //    //Find the straight section of line nearest to point
-        //}
-
-
-        //TODO - allow writing/saving a transect
-
-        //public Feature Feature { get; private set; }
-
-        //public static Transect CreateWith(Geometry geometry, string name)
-        //{
-        //    if (geometry == null)
-        //        throw new ArgumentNullException("geometry");
-        //    if (geometry.IsEmpty || !geometry.IsValid || geometry.GeometryType != GeometryType.Polyline)
-        //        throw new ArgumentException("Geometry is empty or invalid");
-
-        //    Transect transect = new Transect();
-        //    transect.Feature = MobileUtilities.CreateNewFeature(FeatureLayerName);
-        //    transect.Feature.Geometry = geometry;
-        //    transect.LoadAttributes();
-        //    transect.Name = name;
-        //    transect.Save();
-        //    Transects[transect.Guid] = transect;
-        //    return transect;
-        //}
-
 
     }
 
