@@ -6,3 +6,5 @@ glob:AnimalObservations/StyleCop.Cache
 glob:AnimalObservations/*.pfx
 glob:AnimalObservations/AnimalObservations.csproj.*
 glob:AnimalObservations/Deployment/*.zip
+syntax: glob
+AnimalObservations.5.1.ReSharper.user
