@@ -1,0 +1,172 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using ESRI.ArcGIS.Mobile;
+using ESRI.ArcGIS.Mobile.Client;
+using ESRI.ArcGIS.Mobile.Geometries;
+using ESRI.ArcGIS.Mobile.MobileServices;
+using System.Diagnostics;
+
+namespace AnimalObservations
+{
+    public class Transect
+    {
+        //FIXME - Bearing will be 180 degrees off if traveling from finish to start
+
+        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Transects");
+
+        static Dictionary<Guid, Transect> transects;
+
+        public Guid Guid { get; private set; }
+        public Geometry Shape { get; private set; }
+        public string Name { get; private set; }
+        public double Bearing { get; private set; }
+
+        private Transect()
+        {}
+
+        static public IEnumerable<Transect> AllTransects
+        {
+            get
+            {
+                if (transects == null)
+                    LoadReadOnlyTransectsFromDB();
+                return transects.Values;
+            }
+        }
+
+        static public IEnumerable<Transect> GetWithin(Envelope extents)
+        {
+            Debug.Assert(extents != null, "Fail, null extents in Transect.GetWithin()");
+            var results = from transect in AllTransects
+                          where transect.Shape.Intersects(extents)
+                          select transect;
+            return results;
+        }
+
+        //internal static Transect GetNearest(Envelope extents, Coordinate coordinate)
+        //{
+        //    // Do not consider non-visible transects.
+        //    // nearest picks the current selection in the picklist of visible transects.
+        //    Debug.Assert(coordinate != null, "Fail, null coordinate in Transect.GetNearest()");
+
+        //    Geometry myLocation = new Point(coordinate);
+        //    Transect Closest = GetWithin(extents).OrderBy(transect => transect.Shape.Distance(myLocation))
+        //                                         .FirstOrDefault();
+        //    return Closest;
+        //}
+
+        //static public bool HasVisibleTransects
+        //{
+        //    get
+        //    {
+        //        if (transects == null)
+        //            LoadReadOnlyTransectsFromDB();
+        //        return transects.Count > 0;
+        //    }
+        //}
+
+        static public Transect FromGuid(Guid guid)
+        {
+            if (transects == null)
+                LoadReadOnlyTransectsFromDB();
+            if (transects.ContainsKey(guid))
+                return transects[guid];
+            else
+                return null;
+        }
+
+        static public Transect FromName(string name)
+        {
+            if (transects == null)
+                LoadReadOnlyTransectsFromDB();
+            return transects.Values.FirstOrDefault(transect => transect.Name == name);
+        }
+
+        private static void LoadReadOnlyTransectsFromDB()
+        {
+            transects = new Dictionary<Guid, Transect>();
+            using (FeatureDataReader data = FeatureLayer.GetDataReader(new QueryFilter(), EditState.Current))
+            {
+                while (data.Read())
+                {
+                    Transect transect = new Transect();
+                    //If we can't load a transect for some reason (i.e bad geometry, missing values, etc), then skip it
+                    try
+                    {
+                        transect.LoadAttributes(data);
+                        transects[transect.Guid] = transect;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Print("Read a bad transect. " + ex.Message);
+                    }
+                }
+            }
+        }
+
+        private void LoadAttributes(FeatureDataReader data)
+        {
+            Guid = new Guid(data.GetGlobalId().ToByteArray());
+            Shape = data.GetGeometry();
+            Name = data.GetString(data.GetOrdinal("Name"));
+            Bearing = CalculateBearing(Shape as Polyline);
+        }
+
+        private double CalculateBearing(Polyline line)
+        {
+            if (line == null)
+                throw new ArgumentNullException("line");
+            //transect should have only one part; regardless, ignore additional parts.
+            CoordinateCollection points = line.Parts[0];
+            //assume transect is a simple (2 point) line; regardless, ignore additional vertices.
+            Coordinate firstPoint = points.First();
+            Coordinate lastPoint = points.Last();
+            return Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
+        }
+
+        ////Only needed for complex transects
+        //public double CalculateBearing(Polyline line, Point point)
+        //{
+        //    //Find the straight section of line nearest to point
+        //}
+
+
+        //TODO - allow writing/saving a transect
+
+        //public Feature Feature { get; private set; }
+
+        //public static Transect CreateWith(Geometry geometry, string name)
+        //{
+        //    if (geometry == null)
+        //        throw new ArgumentNullException("geometry");
+        //    if (geometry.IsEmpty || !geometry.IsValid || geometry.GeometryType != GeometryType.Polyline)
+        //        throw new ArgumentException("Geometry is empty or invalid");
+
+        //    Transect transect = new Transect();
+        //    transect.Feature = MobileUtilities.CreateNewFeature(FeatureLayerName);
+        //    transect.Feature.Geometry = geometry;
+        //    transect.LoadAttributes();
+        //    transect.Name = name;
+        //    transect.Save();
+        //    Transects[transect.Guid] = transect;
+        //    return transect;
+        //}
+
+
+    }
+
+    public static class TransectListExtension
+    {
+        public static Transect GetNearest(this IEnumerable<Transect> transects, Coordinate coordinate)
+        {
+            Debug.Assert(coordinate != null, "Fail, null coordinate in IEnumerable<Transect>.GetNearest()");
+
+            Geometry myLocation = new Point(coordinate);
+            Transect Closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
+                                        .FirstOrDefault();
+            return Closest;
+        }
+    }
+}

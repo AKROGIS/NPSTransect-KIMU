@@ -1,0 +1,13 @@
+﻿<MobileClient:MobileApplicationPage
+    x:Class="AnimalObservations.RecordTrackLogPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:MobileClient="clr-namespace:ESRI.ArcGIS.Mobile.Client;assembly=ESRI.ArcGIS.Mobile.Client"
+    xmlns:MobileControl="clr-namespace:ESRI.ArcGIS.Mobile.Client.Controls;assembly=ESRI.ArcGIS.Mobile.Client"
+    >
+    <DockPanel>
+        <MobileControl:MapControl Name="mapControl"/>
+    </DockPanel>
+</MobileClient:MobileApplicationPage>
+
+  

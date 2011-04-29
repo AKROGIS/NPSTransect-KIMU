@@ -1,0 +1,7 @@
+glob:AnimalObservations.suo
+glob:AnimalObservations/bin
+glob:AnimalObservations/obj
+glob:AnimalObservations/StyleCop.Cache
+glob:AnimalObservations/*.pfx
+glob:AnimalObservations/AnimalObservations.csproj.*
+glob:AnimalObservations/Deployment/*.zip

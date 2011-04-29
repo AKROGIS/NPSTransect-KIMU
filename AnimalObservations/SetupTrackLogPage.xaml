@@ -1,0 +1,60 @@
+﻿<MobileClient:MobileApplicationPage
+    x:Class="AnimalObservations.SetupTrackLogPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:MobileClient="clr-namespace:ESRI.ArcGIS.Mobile.Client;assembly=ESRI.ArcGIS.Mobile.Client"
+    DataContext="{Binding RelativeSource={RelativeSource Self}}"
+    >
+    <Grid>
+        <Grid.Resources>
+            <Style TargetType="Label">
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Padding" Value="10,5"/>
+            </Style>
+            <Style TargetType="TextBox">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Margin" Value="10"/>
+            </Style>
+            <Style TargetType="ComboBox">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Margin" Value="10"/>
+            </Style>
+        </Grid.Resources>
+            <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=transectComboBox}" >_Transect:</Label>
+        <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=vesselTextBox}" >Ve_ssel:</Label>
+        <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=dataRecorderTextBox}" >_Data Recorder:</Label>
+        <Label Grid.Column="0" Grid.Row="3" Target="{Binding ElementName=observer1TextBox}" >Observer #_1:</Label>
+        <Label Grid.Column="0" Grid.Row="4" Target="{Binding ElementName=observer2TextBox}" >Observer #_2:</Label>
+        <Label Grid.Column="0" Grid.Row="5" Target="{Binding ElementName=weatherComboBox}" >_Weather:</Label>
+        <Label Grid.Column="0" Grid.Row="6" Target="{Binding ElementName=visibilityComboBox}" >_Visibility:</Label>
+        <Label Grid.Column="0" Grid.Row="7" Target="{Binding ElementName=beaufortComboBox}" >_Beaufort:</Label>
+        <ComboBox Grid.Column="1" Grid.Row="0" Name="transectComboBox" ItemsSource="{Binding Transects}" DisplayMemberPath="Name" SelectedValue="{Binding Task.CurrentTrackLog.Transect}"/>
+        <TextBox Grid.Column="1" Grid.Row="1" x:Name="vesselTextBox" Text="{Binding Task.CurrentTrackLog.Vessel}"/>
+        <TextBox Grid.Column="1" Grid.Row="2" Name="dataRecorderTextBox" Text="{Binding Task.CurrentTrackLog.DataRecorder}"/>
+        <TextBox Grid.Column="1" Grid.Row="3" Name="observer1TextBox" Text="{Binding Task.CurrentTrackLog.Observer1}"/>
+        <TextBox Grid.Column="1" Grid.Row="4" Name="observer2TextBox" Text="{Binding Task.CurrentTrackLog.Observer2}"/>
+        <ComboBox Grid.Column="1" Grid.Row="5" Name="weatherComboBox" ItemsSource="{Binding WeatherDomain}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Weather}"/>
+        <ComboBox Grid.Column="1" Grid.Row="6" Name="visibilityComboBox" ItemsSource="{Binding VisibilityDomain}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Visibility}"/>
+        <ComboBox Grid.Column="1" Grid.Row="7" Name="beaufortComboBox" ItemsSource="{Binding BeaufortDomain}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Beaufort}"/>
+    </Grid>
+</MobileClient:MobileApplicationPage>
+
+  
