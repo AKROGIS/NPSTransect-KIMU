@@ -11,7 +11,7 @@ namespace AnimalObservations
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GPS Sample Locations");
 
-        static Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
+        static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
 
         public Feature Feature { get; private set; }
         public Guid Guid { get; private set; }
@@ -36,11 +36,10 @@ namespace AnimalObservations
             if (GpsPoints.ContainsKey(guid))
                 return GpsPoints[guid];
 
-            GpsPoint gpsPoint = new GpsPoint();
-            gpsPoint.Feature = MobileUtilities.GetFeature(FeatureLayer, guid);
-            if (gpsPoint.Feature == null)
+            var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
+            if (feature == null)
                 return null;
-
+            var gpsPoint = new GpsPoint {Feature = feature};
             gpsPoint.LoadAttributes();
             GpsPoints[gpsPoint.Guid] = gpsPoint;
             return gpsPoint;
@@ -55,12 +54,15 @@ namespace AnimalObservations
             if (!gpsConnection.IsOpen)
                 throw new InvalidOperationException("GPS connection is closed");
 
-            GpsPoint gpsPoint = new GpsPoint();
-            gpsPoint.Feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            if (gpsPoint.Feature == null)
+            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
+            if (feature == null)
                 return null;
-            gpsPoint.Guid = new Guid(gpsPoint.Feature.FeatureDataRow.GlobalId.ToByteArray());
-            gpsPoint.TrackLog = trackLog;
+            var gpsPoint = new GpsPoint
+                               {
+                                   Feature = feature,
+                                   Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
+                                   TrackLog = trackLog
+                               };
 
             gpsPoint.LoadAttributes(gpsConnection);
             GpsPoints[gpsPoint.Guid] = gpsPoint;
@@ -73,7 +75,7 @@ namespace AnimalObservations
             Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
             TrackLog = TrackLog.FromGuid((Guid)Feature.FeatureDataRow["TrackID"]);
 
-            Latitude = (double)Feature.FeatureDataRow["Lat_dd"]; ;
+            Latitude = (double)Feature.FeatureDataRow["Lat_dd"];
             Longitude = (double)Feature.FeatureDataRow["Long_dd"];
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
             GpsTime = (DateTime)Feature.FeatureDataRow["Time_utc"];

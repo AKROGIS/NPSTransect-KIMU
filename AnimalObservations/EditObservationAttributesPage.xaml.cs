@@ -8,7 +8,7 @@ using ESRI.ArcGIS.Mobile.Client;
 namespace AnimalObservations
 {
 
-    public partial class EditObservationAttributesPage : MobileApplicationPage
+    public partial class EditObservationAttributesPage
     {
         public EditObservationAttributesPage()
         {
@@ -17,41 +17,41 @@ namespace AnimalObservations
 
             InitializeComponent();
 
-            this.Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
-            this.Note = "Edit the observation values";
+            Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
+            Note = "Edit the observation values";
             // page icon
-            Uri uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
-            this.ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
 
-            PageNavigationCommand NewObservationCommand = new PageNavigationCommand(
+            var newObservationCommand = new PageNavigationCommand(
                 PageNavigationCommandType.Highlighted,
                 "New Observation",
                 param => NewObservationCommandExecute(),
-                param => { return true; }  //We can always execute this command
+                param => true  //We can always execute this command
             );
 
-            this.OkCommand.CommandType = PageNavigationCommandType.Positive;
-            this.OkCommand.Text = "Save";
+            OkCommand.CommandType = PageNavigationCommandType.Positive;
+            OkCommand.Text = "Save";
 
             // back Buttons
-            this.BackCommands.Clear();
+            BackCommands.Clear();
             //FIXME - Cancel is more appropriate if this is an existing observation.
-            this.CancelCommand.Text = "Delete";
-            this.BackCommands.Add(CancelCommand);
+            CancelCommand.Text = "Delete";
+            BackCommands.Add(CancelCommand);
 
             // forward Buttons
-            this.ForwardCommands.Clear();
-            this.ForwardCommands.Add(NewObservationCommand);
-            this.ForwardCommands.Add(OkCommand);
+            ForwardCommands.Clear();
+            ForwardCommands.Add(newObservationCommand);
+            ForwardCommands.Add(OkCommand);
 
             //Setup desired keyboard behavior
-            this.Focusable = true;
-            this.Loaded += (s, e) => Keyboard.Focus(this.angleTextBox);
+            Focusable = true;
+            Loaded += (s, e) => Keyboard.Focus(angleTextBox);
 
             Task.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == "ActiveObservation" && Task.ActiveObservation != null)
-                    this.Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
+                    Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
             };
         }
 
@@ -78,7 +78,7 @@ namespace AnimalObservations
         public IDictionary<string, string> SpeciesDomain { get; private set; }
 
 
-        private BirdGroup2 birdGroupInProgress = new BirdGroup2();
+        private BirdGroup2 _birdGroupInProgress = new BirdGroup2();
 
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -94,19 +94,19 @@ namespace AnimalObservations
             }
             //See if this key helps define a bird group
             string keyString = (new KeyConverter()).ConvertToString(e.Key);
-            if (keyString != null && keyString.Length > 0)
+            if (!string.IsNullOrEmpty(keyString))
             {
                 Char keyChar = keyString[0];
-                if (!birdGroupInProgress.AcceptKey(keyChar))
+                if (!_birdGroupInProgress.AcceptKey(keyChar))
                 {
-                    if (birdGroupInProgress.IsValid)
+                    if (_birdGroupInProgress.IsValid)
                     {
-                        Task.ActiveObservation.BirdGroups.Add(birdGroupInProgress);
-                        birdGroupInProgress = new BirdGroup2();
+                        Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
+                        _birdGroupInProgress = new BirdGroup2();
                     }
                     else
                     {
-                        birdGroupInProgress.Reset();
+                        _birdGroupInProgress.Reset();
                     }
                 }
             }
@@ -125,7 +125,7 @@ namespace AnimalObservations
             //FIXME - if the observation has been saved (during creation?) then it should be deleted
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
-                MobileApplication.Current.Transition(this.PreviousPage);
+                MobileApplication.Current.Transition(PreviousPage);
         }
 
         protected override void OnOkCommandExecute()
@@ -137,7 +137,7 @@ namespace AnimalObservations
             Task.ActiveObservation.Save();
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
-                MobileApplication.Current.Transition(this.PreviousPage);
+                MobileApplication.Current.Transition(PreviousPage);
         }
 
         void NewObservationCommandExecute()
@@ -148,22 +148,22 @@ namespace AnimalObservations
         }
 
         //FIXME capture the delete event in the data grid to properly dispose of the birdgroup. 
-        private void RemoveButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (gridView.SelectedIndex != -1)
-            {
-                BirdGroup2 bird = Task.ActiveObservation.BirdGroups[gridView.SelectedIndex];
-                Task.ActiveObservation.BirdGroups.RemoveAt(gridView.SelectedIndex);
-                bird.Delete();
-            }
-        }
+        //private void RemoveButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (gridView.SelectedIndex != -1)
+        //    {
+        //        BirdGroup2 bird = Task.ActiveObservation.BirdGroups[gridView.SelectedIndex];
+        //        Task.ActiveObservation.BirdGroups.RemoveAt(gridView.SelectedIndex);
+        //        bird.Delete();
+        //    }
+        //}
 
-        private void backButton_Click(object sender, RoutedEventArgs e)
+        private void BackButtonClick(object sender, RoutedEventArgs e)
         {
             Task.PreviousObservation();
         }
 
-        private void forwardButton_Click(object sender, RoutedEventArgs e)
+        private void ForwardButtonClick(object sender, RoutedEventArgs e)
         {
             Task.NextObservation();
         }

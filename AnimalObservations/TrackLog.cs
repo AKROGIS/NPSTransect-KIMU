@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
@@ -10,7 +11,7 @@ namespace AnimalObservations
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Tracks");
         
-        static Dictionary<Guid, TrackLog> TrackLogs = new Dictionary<Guid, TrackLog>();
+        static readonly Dictionary<Guid, TrackLog> TrackLogs = new Dictionary<Guid, TrackLog>();
 
         public Feature Feature { get; private set; }
         public Guid Guid { get; private set; }
@@ -26,25 +27,25 @@ namespace AnimalObservations
         public DateTime StartingTime { get; set; }
         public DateTime FinishingTime { get; set; }
 
-        CoordinateCollection _points = new CoordinateCollection();
+        readonly CoordinateCollection _points = new CoordinateCollection();
 
         private TrackLog()
         { }
 
         public static TrackLog FromGuid(Guid guid)
         {
-            if (guid == null)
-                throw new ArgumentNullException("guid");
-
             if (TrackLogs.ContainsKey(guid))
                 return TrackLogs[guid];
 
-            TrackLog trackLog = new TrackLog();
-            trackLog.Feature = MobileUtilities.GetFeature(FeatureLayer, guid);
-            if (trackLog.Feature == null)
+            var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
+            if (feature == null)
                 return null;
-            trackLog.Guid = new Guid(trackLog.Feature.FeatureDataRow.GlobalId.ToByteArray());
-            trackLog.Transect = Transect.FromGuid((Guid)trackLog.Feature.FeatureDataRow["TransectGID"]);
+            var trackLog = new TrackLog
+                               {
+                                   Feature = feature,
+                                   Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
+                                   Transect = Transect.FromGuid((Guid) feature.FeatureDataRow["TransectGID"])
+                               };
 
             //get default attributes
             trackLog.LoadAttributes();
@@ -55,17 +56,19 @@ namespace AnimalObservations
 
         public static TrackLog CreateWith(Transect transect)
         {
+            Debug.Assert(transect != null, "Fail!, transect is null in TrackLog.CreateWith()");
             if (transect == null)
-                throw new ArgumentNullException("transect");
-
-            TrackLog trackLog = new TrackLog();
-            trackLog.Feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            if (trackLog.Feature == null)
                 return null;
-            trackLog.Guid = new Guid(trackLog.Feature.FeatureDataRow.GlobalId.ToByteArray());
-            trackLog.Transect = transect;
+            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
+            if (feature == null)
+                return null;
+            var trackLog = new TrackLog
+                               {
+                                   Feature = feature,
+                                   Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
+                                   Transect = transect
+                               };
 
-            //get default attributes
             trackLog.LoadAttributes();
 
             TrackLogs[trackLog.Guid] = trackLog;
@@ -74,15 +77,18 @@ namespace AnimalObservations
 
         internal static TrackLog CloneFrom(TrackLog oldTrackLog)
         {
+            Debug.Assert(oldTrackLog != null, "Fail!, oldTrackLog is null in TrackLog.CloneFrom()");
             if (oldTrackLog == null)
-                throw new ArgumentNullException("oldTrackLog");
-
-            TrackLog newTrackLog = new TrackLog();
-            newTrackLog.Feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            if (newTrackLog.Feature == null)
                 return null;
-            newTrackLog.Guid = new Guid(newTrackLog.Feature.FeatureDataRow.GlobalId.ToByteArray());
-            newTrackLog.Transect = oldTrackLog.Transect;
+            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
+            if (feature == null)
+                return null;
+            var newTrackLog = new TrackLog
+                                  {
+                                      Feature = feature,
+                                      Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
+                                      Transect = oldTrackLog.Transect
+                                  };
 
             //get default attributes
             newTrackLog.LoadAttributes(oldTrackLog);
@@ -140,17 +146,12 @@ namespace AnimalObservations
             SyncPropertiesToFeature();
             bool saveSuccess = SaveGeometry();
             //FIXME - provide better error messages, and correct/retry abilities
-            if (!saveSuccess)
-                Console.WriteLine("Save Failed.");
-            else
-                Console.WriteLine("Save Succeeded.");
+            Console.WriteLine(!saveSuccess ? "Save Failed." : "Save Succeeded.");
         }
 
         public bool SaveGeometry()
         {
-            Polyline p = new Polyline(_points);
-            //If p is invalid (i.e has < 2 points), the SaveEdits will return false. 
-            Feature.Geometry = p;
+            Feature.Geometry = new Polyline(_points);
             return Feature.SaveEdits();
         }
 

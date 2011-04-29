@@ -10,11 +10,9 @@ namespace AnimalObservations
 {
     public class Transect
     {
-        //FIXME - Bearing will be 180 degrees off if traveling from finish to start
-
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Transects");
 
-        static Dictionary<Guid, Transect> transects;
+        static Dictionary<Guid, Transect> _transects;
 
         public Guid Guid { get; private set; }
         public Geometry Shape { get; private set; }
@@ -28,9 +26,9 @@ namespace AnimalObservations
         {
             get
             {
-                if (transects == null)
-                    LoadReadOnlyTransectsFromDB();
-                return transects.Values;
+                if (_transects == null)
+                    LoadAllTransectsFromDataSource();
+                return _transects.Values;
             }
         }
 
@@ -45,34 +43,31 @@ namespace AnimalObservations
 
         static public Transect FromGuid(Guid guid)
         {
-            if (transects == null)
-                LoadReadOnlyTransectsFromDB();
-            if (transects.ContainsKey(guid))
-                return transects[guid];
-            else
-                return null;
+            if (_transects == null)
+                LoadAllTransectsFromDataSource();
+            return _transects.ContainsKey(guid) ? _transects[guid] : null;
         }
 
         static public Transect FromName(string name)
         {
-            if (transects == null)
-                LoadReadOnlyTransectsFromDB();
-            return transects.Values.FirstOrDefault(transect => transect.Name == name);
+            if (_transects == null)
+                LoadAllTransectsFromDataSource();
+            return _transects.Values.FirstOrDefault(transect => transect.Name == name);
         }
 
-        private static void LoadReadOnlyTransectsFromDB()
+        private static void LoadAllTransectsFromDataSource()
         {
-            transects = new Dictionary<Guid, Transect>();
+            _transects = new Dictionary<Guid, Transect>();
             using (FeatureDataReader data = FeatureLayer.GetDataReader(new QueryFilter(), EditState.Current))
             {
                 while (data.Read())
                 {
-                    Transect transect = new Transect();
+                    var transect = new Transect();
                     //If we can't load a transect for some reason (i.e bad geometry, missing values, etc), then skip it
                     try
                     {
                         transect.LoadAttributes(data);
-                        transects[transect.Guid] = transect;
+                        _transects[transect.Guid] = transect;
                     }
                     catch (Exception ex)
                     {
@@ -90,7 +85,8 @@ namespace AnimalObservations
             Bearing = CalculateBearing(Shape as Polyline);
         }
 
-        private double CalculateBearing(Polyline line)
+        //FIXME - Bearing will be 180 degrees off if traveling from finish to start
+        private static double CalculateBearing(Polyline line)
         {
             if (line == null)
                 throw new ArgumentNullException("line");
@@ -111,9 +107,9 @@ namespace AnimalObservations
             Debug.Assert(coordinate != null, "Fail, null coordinate in IEnumerable<Transect>.GetNearest()");
 
             Geometry myLocation = new Point(coordinate);
-            Transect Closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
+            Transect closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
                                         .FirstOrDefault();
-            return Closest;
+            return closest;
         }
     }
 }

@@ -27,9 +27,6 @@ namespace AnimalObservations
 
         private BirdGroup DbLink { get; set; }
 
-        public BirdGroup2()
-        { }
-
         public void Delete()
         {
             if (DbLink != null)

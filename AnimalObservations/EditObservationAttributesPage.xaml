@@ -35,9 +35,9 @@
             <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance}"/>
         </Grid>
         <StackPanel HorizontalAlignment="Center" DockPanel.Dock="Bottom" Orientation="Horizontal">
-            <Button Width="28" Click="backButton_Click" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">b</Button>
+            <Button Width="28" Click="BackButtonClick" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">b</Button>
             <Label Margin="5" Content="{Binding Task.OpenObservations.Count}"/>
-            <Button Width="28" Click="forwardButton_Click" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">f</Button>
+            <Button Width="28" Click="ForwardButtonClick" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">f</Button>
         </StackPanel>
 
         <toolkit:DataGrid Name="gridView" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" IsTabStop="True" />

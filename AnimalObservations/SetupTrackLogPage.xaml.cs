@@ -8,32 +8,31 @@ using ESRI.ArcGIS.Mobile.Geometries;
 
 namespace AnimalObservations
 {
-    public partial class SetupTrackLogPage : MobileApplicationPage
+    public partial class SetupTrackLogPage
     {
         public SetupTrackLogPage()
         {
             InitializeData();
 
             InitializeComponent();
-            // title
-            this.Title = "Track Log Properties";
-            //subtitle
-            this.Note = "Common observation attributes for <un-named> transect";
+
+            Title = "Track Log Properties";
+            Note = "Common observation attributes for <un-named> transect";
 
             // page icon
-            Uri uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
-            this.ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
 
             // back button
-            this.BackCommands.Add(this.BackCommand);
+            BackCommands.Add(BackCommand);
 
             // forward button
-            this.OkCommand.Text = "Start Recording";
-            this.ForwardCommands.Add(this.OkCommand);
+            OkCommand.Text = "Start Recording";
+            ForwardCommands.Add(OkCommand);
 
             //Setup desired keyboard behavior
-            this.Focusable = true;
-            this.Loaded += (s, e) => Keyboard.Focus(this.vesselTextBox);
+            Focusable = true;
+            Loaded += (s, e) => Keyboard.Focus(vesselTextBox);
         }
 
         private void InitializeData()
@@ -87,10 +86,10 @@ namespace AnimalObservations
             //TODO - Is there anything I need to do to dispose of the unfinished tracklog?
             Task.DefaultTrackLog = Task.CurrentTrackLog;
             Task.CurrentTrackLog = null;
-            MobileApplication.Current.Transition(this.PreviousPage);
+            MobileApplication.Current.Transition(PreviousPage);
         }
 
-        //FIXME - this can be removed, since data is always valid, however it doesn't seem to hurt
+        //TODO - this can be removed, since data is always valid, however it doesn't seem to hurt
         protected override bool CanExecuteOkCommand()
         {
             if (Task == null || Task.CurrentTrackLog == null)
@@ -129,13 +128,13 @@ namespace AnimalObservations
             if (beaufortComboBox.IsFocused && e.Key == Key.Tab)
             {
                 e.Handled = true;
-                Keyboard.Focus(this.vesselTextBox);
+                Keyboard.Focus(vesselTextBox);
                 return;
             }
             if (vesselTextBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
             {
                 e.Handled = true;
-                Keyboard.Focus(this.beaufortComboBox);
+                Keyboard.Focus(beaufortComboBox);
                 return;
             }
             base.OnKeyDown(e);

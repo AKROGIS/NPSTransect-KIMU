@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using ESRI.ArcGIS.Mobile;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.MobileServices;
 
@@ -32,24 +31,21 @@ namespace AnimalObservations
 
         internal static Feature GetFeature(FeatureLayer featureLayer, Guid guid)
         {
-            string whereClause = featureLayer.GlobalIdColumnName + " = " + guid.ToString();
+            string whereClause = string.Format("{0} = {1}", featureLayer.GlobalIdColumnName, guid);
             return GetFeature(featureLayer, whereClause);
         }
 
         internal static Feature GetFeature(FeatureLayer featureLayer, string whereClause)
         {
-            QueryFilter query = new QueryFilter(whereClause);
-            FeatureDataReader data = featureLayer.GetDataReader(query);
-
-            //FIXME - this is totally broken
             throw new NotImplementedException();
-
+            //var query = new QueryFilter(whereClause);
+            //FeatureDataReader data = featureLayer.GetDataReader(query);
             //FeatureDataTable table = featureLayer.GetDataTable(query);
-            //if (data.Rows.Count < 1)
+            //if (table.Rows.Count < 1)
             //    return null;
             //if (table.Rows.Count > 1)
-                //Ambiguous results, best to not return anything.
-                //return null;
+            //    //Ambiguous results, best to not return anything.
+            //    return null;
             //return new Feature(table[0]);
         }
 

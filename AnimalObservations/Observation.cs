@@ -13,7 +13,7 @@ namespace AnimalObservations
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Observations");
 
-        static Dictionary<Guid, Observation> Observations = new Dictionary<Guid, Observation>();
+        static readonly Dictionary<Guid, Observation> Observations = new Dictionary<Guid, Observation>();
 
         public Feature Feature { get; private set; }
         public Guid Guid { get; private set; }
@@ -33,10 +33,10 @@ namespace AnimalObservations
             if (Observations.ContainsKey(guid))
                 return Observations[guid];
 
-            Observation observation = new Observation();
-            observation.Feature = MobileUtilities.GetFeature(FeatureLayer, guid);
-            if (observation.Feature == null)
+            var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
+            if (feature == null)
                 return null;
+            var observation = new Observation {Feature = feature};
 
             observation.LoadAttributes1();
             observation.LoadAttributes2();
@@ -50,10 +50,15 @@ namespace AnimalObservations
             if (gpsPoint == null)
                 throw new ArgumentNullException("gpsPoint");
 
-            Observation observation = new Observation();
-            observation.Feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            observation.Guid = new Guid(observation.Feature.FeatureDataRow.GlobalId.ToByteArray()); 
-            observation.GpsPoint = gpsPoint;
+            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
+            if (feature == null)
+                return null;
+            var observation = new Observation
+                                  {
+                                      Feature = feature,
+                                      Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
+                                      GpsPoint = gpsPoint
+                                  };
             //get default attributes
             observation.LoadAttributes2();
             Observations[gpsPoint.Guid] = observation;

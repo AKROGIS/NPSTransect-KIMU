@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -26,7 +25,7 @@ namespace AnimalObservations
 
         protected override ImageSource GetImageSource()
         {
-            Uri uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
             return new BitmapImage(uri);
         }
 
@@ -40,16 +39,8 @@ namespace AnimalObservations
 
         public override void Execute()
         {
-
-            //TODO - remove - this is test code for drawing the boat
-            //Random r = new Random();
-            //double x = 442000 + r.NextDouble() * 4700;
-            //double y = 6485000 + r.NextDouble() * 4200;
-            //DrawBoat(new Coordinate(x, y), 360.0 * r.NextDouble());
-            //return;
-
             //Tasks can always be executed - no override for CanExecute() - so check valididty here.
-            Envelope mapExtents = MobileApplication.Current.Map.GetExtent();
+            var mapExtents = MobileApplication.Current.Map.GetExtent();
             if (mapExtents == null)
             {
                 ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
@@ -66,8 +57,7 @@ namespace AnimalObservations
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
-            //if (false) //FIXME - remove when testing is complete
-            if (!gpsConnection.IsOpen || MostRecentLocation == null)
+            if (!_gpsConnection.IsOpen || MostRecentLocation == null)
             {
                 ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
                     "GPS is disconnected or doesn't yet have a fix on the satellites.\n" + 
@@ -87,32 +77,32 @@ namespace AnimalObservations
         //while current tracklog is not null recording may be turned on/off.
         //CurrentTrackLog will never be changed unless recording is off.
 
-        private bool isRecording;
-        private object TracklogLock = new object();
+        private bool _isRecording;
+        private readonly object _tracklogLock = new object();
 
         public bool StartRecording()
         {
-            if (CurrentTrackLog == null || !gpsConnection.IsOpen)
+            if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
             {
-                isRecording = false;
+                _isRecording = false;
             }
             else
             {
-                isRecording = true;
+                _isRecording = true;
                 //FIXME - the following seems to cause a conflicting event.  Removed for now
 
                 //Collect our first point now, don't wait for an event. 
                 //Connection_GpsChanged(null, null);
             }
-            return isRecording;
+            return _isRecording;
         }
 
         public void StopRecording()
         {
             //Make sure the GPS event isn't using the CurrentTrackLog 
-            lock (TracklogLock)
+            lock (_tracklogLock)
             {
-                isRecording = false;
+                _isRecording = false;
                 DefaultTrackLog = CurrentTrackLog;
                 CurrentTrackLog = null;
             }
@@ -125,7 +115,7 @@ namespace AnimalObservations
             get { return _currentTrackLog; }
             set
             {
-                if (isRecording)
+                if (_isRecording)
                     throw new InvalidOperationException("Cannot change current track log while recording.");
                 if (value != _currentTrackLog)
                 {
@@ -176,10 +166,7 @@ namespace AnimalObservations
             //If we are deleting the active record, make the first record active
             OpenObservations.Remove(observation);
             if (observation == ActiveObservation)
-                if (OpenObservations.Count == 0)
-                    ActiveObservation = null;
-                else
-                    ActiveObservation = OpenObservations[0];
+                ActiveObservation = (OpenObservations.Count == 0) ? null : OpenObservations[0];
         }
 
         public void RemoveObservationAlt(Observation observation)
@@ -190,10 +177,7 @@ namespace AnimalObservations
             OpenObservations.Remove(observation);
             if (deletedIndex <= activeIndex)
                 activeIndex--;
-            if (activeIndex == -1)
-                ActiveObservation = null;
-            else
-                ActiveObservation = OpenObservations[activeIndex];
+            ActiveObservation = (activeIndex == -1) ? null : OpenObservations[activeIndex];
         }
 
         public void NextObservation()
@@ -229,23 +213,22 @@ namespace AnimalObservations
         /// </summary>
         public Coordinate MostRecentLocation { get; set; }
 
-        private GpsConnection gpsConnection;
+        private GpsConnection _gpsConnection;
 
         private void InitializeGpsConnection()
         {
             // Get GPS Connection and set up for change events
-            IGpsConnectionManager GpsMgr = MobileApplication.Current.GpsConnectionManager;
-            gpsConnection = MobileApplication.Current.GpsConnectionManager.Connection;
+            _gpsConnection = MobileApplication.Current.GpsConnectionManager.Connection;
             //FIXME - Do I want to do this, or rely on application settings/user control
             //GpsMgr.OpenAsync();
             //FIXME - if the connection is closed and re-opened.  Do I need to get a new connection object?
 
-            gpsConnection.GpsClosed += new EventHandler(Connection_GpsClosed);
-            gpsConnection.GpsError += new EventHandler<GpsErrorEventArgs>(Connection_GpsError);
-            gpsConnection.GpsChanged += new EventHandler(Connection_GpsChanged);
+            _gpsConnection.GpsClosed += ProcessGpsClosedEventFromConnection;
+            _gpsConnection.GpsError += ProcessGpsErrorEventFromConnection;
+            _gpsConnection.GpsChanged += ProcessGpsChangedEventFromConnection;
         }
 
-        void Connection_GpsError(object sender, ESRI.ArcGIS.Mobile.Gps.GpsErrorEventArgs e)
+        void ProcessGpsErrorEventFromConnection(object sender, GpsErrorEventArgs e)
         {
             //FIXME - save any open edits, and wait for the GPS to recover
             //FIXME - Change logging status?  How do toggle it back on if connection returns? 
@@ -259,44 +242,43 @@ namespace AnimalObservations
             //    IsGPSConnected = GpsConn.IsOpen;
         }
 
-        void Connection_GpsClosed(object sender, EventArgs e)
+        void ProcessGpsClosedEventFromConnection(object sender, EventArgs e)
         {
             //FIXME - Close any open pages???
-            if (isRecording)
+            if (_isRecording)
             {
                 CurrentTrackLog.Save();
                 StopRecording();
             }
         }
 
-        void Connection_GpsChanged(object sender, EventArgs e)
+        void ProcessGpsChangedEventFromConnection(object sender, EventArgs e)
         {
-            Debug.Print("Connection_GpsChanged: {0}, {1}", gpsConnection.FixStatus, gpsConnection.GpsChangeType);
-            if (gpsConnection.FixStatus == GpsFixStatus.Invalid)
+            if (_gpsConnection.FixStatus == GpsFixStatus.Invalid)
                 return;
-            if (!LocationChanged(gpsConnection))
+            if (!LocationChanged(_gpsConnection))
                 return;
-            Debug.Print("Connection_GpsChanged: {0}, {1}, {2}, {3}, {4}, {5}, {6}", isRecording, CurrentTrackLog, gpsConnection.GpsChangeType, gpsConnection.FixStatus, gpsConnection.DateTime, gpsConnection.Longitude, gpsConnection.Latitude);
 
+            //TODO - multithreaded locking needs a lot more thought
             //Make sure another thread doesn't change the CurrentTrackLog while I'm working.
-            lock (TracklogLock)
+            lock (_tracklogLock)
             {
-                if (isRecording)
+                if (_isRecording)
                 {
-                    CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, gpsConnection);
+                    CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, _gpsConnection);
                     CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
                     MostRecentLocation = CurrentGpsPoint.Location;
                 }
                 else
                 {
-                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
+                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(_gpsConnection.Longitude, _gpsConnection.Latitude);
                 }
             }
             //FIXME - don't do this when collecting attributes
-            DrawBoat(MostRecentLocation, gpsConnection.Course);
+            DrawBoat(MostRecentLocation, _gpsConnection.Course);
         }
 
-        private bool LocationChanged(GpsConnection gpsConnection)
+        private static bool LocationChanged(GpsConnection gpsConnection)
         {
             return (gpsConnection.GpsChangeType & GpsChangeType.Position) != 0;
         }
@@ -306,43 +288,37 @@ namespace AnimalObservations
 
         #region Draw the boat
 
-        private Image boat;
+        private Image _boat;
 
         private void SetupBoatLayer()
         {
             if (!MobileApplication.Current.Dispatcher.CheckAccess())
             {
-                MobileApplication.Current.Dispatcher.BeginInvoke((System.Threading.ThreadStart)delegate()
-                {
-                    SetupBoatLayer();
-                });
+                MobileApplication.Current.Dispatcher.BeginInvoke((System.Threading.ThreadStart)SetupBoatLayer);
                 return;
             }
 
             //Get Boat Icon
-            Uri uri = new Uri("pack://application:,,,/AnimalObservations;Component/Boat-icon.png");
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Boat-icon.png");
  
-            boat = new Image();
-            //boat.BeginInit();
-            boat.Source = new BitmapImage(uri);
-            boat.Margin = new System.Windows.Thickness(-100,-100, 0, 0);
-            //boat.EndInit();
+            _boat = new Image
+                        {
+                            Source = new BitmapImage(uri), 
+                            Margin = new System.Windows.Thickness(-100, -100, 0, 0)
+                        };
 
             // add graphic layer
-            GraphicLayer overlay = new GraphicLayer();
+            var overlay = new GraphicLayer();
             MobileApplication.Current.Map.MapGraphicLayers.Add(overlay);
-            overlay.Children.Add(boat);
+            overlay.Children.Add(_boat);
         }
 
         private void DrawBoat(Coordinate location, double heading)
         {
             //Only update the UI on the UI thread
-            if (!boat.Dispatcher.CheckAccess())
+            if (!_boat.Dispatcher.CheckAccess())
             {
-                boat.Dispatcher.BeginInvoke((System.Threading.ThreadStart)delegate()
-                {
-                    DrawBoat(location, heading);
-                });
+                _boat.Dispatcher.BeginInvoke((System.Threading.ThreadStart)(() => DrawBoat(location, heading)));
                 return;
             }
 
@@ -350,15 +326,16 @@ namespace AnimalObservations
             //image without rotation is pointing E (270 degrees).
             System.Drawing.Point point = MobileApplication.Current.Map.ToClient(location);
             if (heading > 180)
-                boat.LayoutTransform = new RotateTransform(heading + 90.0);
+                _boat.LayoutTransform = new RotateTransform(heading + 90.0);
             else
             {
-                TransformGroup transform = new TransformGroup();
-                transform.Children.Add(new ScaleTransform(-1.0, 1.0));
-                transform.Children.Add(new RotateTransform(heading - 90.0));
-                boat.LayoutTransform = transform;
+                var transformGroup = new TransformGroup();
+                transformGroup.Children.Add(new ScaleTransform(-1.0, 1.0));
+                transformGroup.Children.Add(new RotateTransform(heading - 90.0));
+                _boat.LayoutTransform = transformGroup;
             }
-            boat.Margin = new System.Windows.Thickness(point.X, point.Y, 0, 0);
+            _boat.Margin = new System.Windows.Thickness(point.X, point.Y, 0, 0);
+            //TODO - pan map to center boat location
             //MobileApplication.Current.Map.CenterAt(location);
         }
 
