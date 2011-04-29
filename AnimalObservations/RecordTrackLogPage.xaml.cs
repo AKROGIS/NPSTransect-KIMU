@@ -26,7 +26,7 @@ namespace AnimalObservations
             Title = _trackLog.Transect.Name;
             Note = "Capturing GPS points in track log";
             // page icon
-            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
             ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
             // back button
             CancelCommand.Text = "Stop";

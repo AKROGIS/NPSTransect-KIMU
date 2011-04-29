@@ -20,7 +20,7 @@ namespace AnimalObservations
             Note = "Common observation attributes for <un-named> transect";
 
             // page icon
-            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
             ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
 
             // back button

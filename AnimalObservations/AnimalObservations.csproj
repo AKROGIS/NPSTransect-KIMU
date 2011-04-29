@@ -112,9 +112,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Tips72.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="HelloWorldTask.ame" />
   </ItemGroup>
   <ItemGroup>

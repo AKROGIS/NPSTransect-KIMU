@@ -25,7 +25,7 @@ namespace AnimalObservations
 
         protected override ImageSource GetImageSource()
         {
-            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
             return new BitmapImage(uri);
         }
 

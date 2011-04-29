@@ -20,7 +20,7 @@ namespace AnimalObservations
             Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
             Note = "Edit the observation values";
             // page icon
-            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Tips72.png");
+            var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
             ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
 
             var newObservationCommand = new PageNavigationCommand(
