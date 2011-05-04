@@ -89,8 +89,11 @@ namespace AnimalObservations
 
         private void LoadAttributes(GpsConnection gpsConnection)
         {
-            Latitude = gpsConnection.Latitude - 2.708086111;
-            Longitude = gpsConnection.Longitude + 13.9560148;
+            Latitude = gpsConnection.Latitude;
+            Longitude = gpsConnection.Longitude;
+            //Offset Regan's office to GLBA main dock
+            Latitude -= 2.7618;
+            Longitude += 13.9988;
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
             GpsTime = gpsConnection.DateTime;
             LocalTime = GpsTime.ToLocalTime();
