@@ -17,7 +17,7 @@ namespace AnimalObservations
         public Guid Guid { get; private set; }
         public Geometry Shape { get; private set; }
         public string Name { get; private set; }
-        public double Bearing { get; private set; }
+        //public double Bearing { get; private set; }
 
         private Transect()
         {}
@@ -82,20 +82,52 @@ namespace AnimalObservations
             Guid = new Guid(data.GetGlobalId().ToByteArray());
             Shape = data.GetGeometry();
             Name = data.GetString(data.GetOrdinal("Name"));
-            Bearing = CalculateBearing(Shape as Polyline);
+            //Bearing = CalculateBearing(Shape as Polyline);
         }
 
-        //FIXME - Bearing will be 180 degrees off if traveling from finish to start
-        private static double CalculateBearing(Polyline line)
+        //TODO - consider a property returning null (multi-segment) or bearing.  bearing must be determined once at the start of the tracklog
+
+        //Called when creating a birdgroup to correct the boat's heading to the transect heading
+        public double NormalizeHeading(GpsPoint gpsData)
+        {
+            Polyline segment = GetClosestSegment(Shape, gpsData.Location);
+            double heading = GetHeadingFromSegment(segment);
+            //heading will be off by 180 degrees off if traveling from finish to start
+            heading = OrientateHeading(heading, gpsData.Bearing);
+            return heading;
+        }
+
+        private static Polyline GetClosestSegment(Geometry shape, Coordinate coordinate)
+        {
+            throw new NotImplementedException();
+            int partIndex, vertexIndex;
+            Polyline line;
+            Double distance;
+            Coordinate vertex;
+            shape.GetNearestVertex(coordinate, vertex, ref partIndex, ref vertexIndex, ref distance);
+            shape.CurrentPartIndex = partIndex;
+            shape.CurrentCoordinateIndex = vertexIndex;
+            return line;
+        }
+
+        private static double GetHeadingFromSegment(Polyline line)
         {
             if (line == null)
                 throw new ArgumentNullException("line");
-            //transect should have only one part; regardless, ignore additional parts.
+            //line should have only one part; regardless, ignore additional parts.
             CoordinateCollection points = line.Parts[0];
-            //assume transect is a simple (2 point) line; regardless, ignore additional vertices.
+            //line should only have 2 point; regardless, ignore additional vertices.
             Coordinate firstPoint = points.First();
             Coordinate lastPoint = points.Last();
             return Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
+        }
+
+        private static double OrientateHeading(double transectHeading, double boatHeading)
+        {
+            double diff = transectHeading - boatHeading;
+            if (-90 < diff && diff < 90)
+                return transectHeading;
+            return transectHeading < 180 ? transectHeading + 180 : transectHeading - 180;
         }
 
     }
