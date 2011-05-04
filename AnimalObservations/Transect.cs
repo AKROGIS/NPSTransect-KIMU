@@ -81,7 +81,7 @@ namespace AnimalObservations
         {
             Guid = new Guid(data.GetGlobalId().ToByteArray());
             Shape = data.GetGeometry();
-            Name = data.GetString(data.GetOrdinal("Name"));
+            Name = data.GetString(data.GetOrdinal("ID"));
             //Bearing = CalculateBearing(Shape as Polyline);
         }
 

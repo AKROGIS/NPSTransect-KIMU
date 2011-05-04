@@ -44,7 +44,7 @@ namespace AnimalObservations
                                {
                                    Feature = feature,
                                    Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                   Transect = Transect.FromGuid((Guid) feature.FeatureDataRow["TransectGID"])
+                                   Transect = Transect.FromName((string) feature.FeatureDataRow["TransectID"])
                                };
 
             //get default attributes
