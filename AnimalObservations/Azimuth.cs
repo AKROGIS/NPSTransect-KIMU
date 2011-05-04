@@ -2,8 +2,10 @@ using System;
 
 namespace AnimalObservations
 {
-	// An Azimuth has a value in (0 .. 360] where 0 = North (+Y) and value is clockwise degrees.  Therefore East = 90, South = 180, ...
-	public struct Azimuth
+	/// <summary>
+    /// An Azimuth is a real number in [0, 360) interpreted as degrees where 0 = North (+Y) and value increase clockwise.
+	/// </summary>
+    public struct Azimuth
 	{
 	    readonly double _value;
 
@@ -31,15 +33,24 @@ namespace AnimalObservations
 			return new Azimuth(radians* 180.0 / Math.PI);
 		}
 
-		//Trig degrees:  0 = +X (or East, 90 Azimuth). angle is counter clockwise.  Therefore N = 90, W = 180, S = 270
-		static public Azimuth FromTrigDegrees (double degrees)
+		/// <summary>
+		/// Returns an Azimuth given a trigonetric angle expressed as degrees
+		/// </summary>
+		/// <param name="degrees">A real number where 0 is on the +X axis and values increase counterclockwise. A full circle is 360 degrees</param>
+		/// <returns></returns>
+        static public Azimuth FromTrigAngleAsDegrees (double degrees)
 		{
 			return new Azimuth(90.0 - degrees);
 		}
 
-		static public Azimuth FromTrigRadians (double radians)
+        /// <summary>
+        /// Returns an Azimuth given a trigonetric angle expressed as radians
+        /// </summary>
+        /// <param name="radians">A real number where 0 is on the +X axis and values increase counterclockwise. A full circle is 2*Pi radians</param>
+        /// <returns></returns>
+        static public Azimuth FromTrigAngleAsRadians(double radians)
 		{
-			return FromTrigDegrees (radians * 180.0 / Math.PI);
+			return FromTrigAngleAsDegrees (radians * 180.0 / Math.PI);
 		}
 
 		public double ToTrigDegrees ()

@@ -86,7 +86,7 @@ namespace AnimalObservations
 
         public bool Save()
         {
-            Feature.Geometry = GetLocation();
+            Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.TransectHeading);
             Feature.FeatureDataRow["ObservationID"] = Observation.Guid;
             Feature.FeatureDataRow["GroupSize"] = Size;
             Feature.FeatureDataRow["Behavior"] = Behavior.ToString();
@@ -106,50 +106,36 @@ namespace AnimalObservations
             Feature.CancelEdit();
         }
 
-        public Point GetLocation()
+        private Point GetLocation(BirdGroupLocationRelativeTo angleBasis)
         {
-            return GetLocationRelativeToBoatHeading();
-            //return GetLocationRelativeToTransectBearing();
-        }
+            Azimuth azimuth;
+            switch (angleBasis)
+            {
+                case BirdGroupLocationRelativeTo.BoatHeading:
+                    azimuth = Observation.GpsPoint.Bearing;
+                    break;
+                default:
+                    azimuth = Observation.GpsPoint.TrackLog.Transect.NormalizeHeading(Observation.GpsPoint);
+                    break;
+            }
 
-        private Point GetLocationRelativeToBoatHeading()
-        {
-            double gpsX = Observation.GpsPoint.Location.X;
-            double gpsY = Observation.GpsPoint.Location.Y;
-            //heading of boat (per GPS) as Azimuth (0=N, 90=E, 180=S, W=270)
-            double bearing = Observation.GpsPoint.Bearing;
             //Add observation angle: clockwise from stern(0 = stern, 90 = port 180 = bow, 270 = starboard)
-            bearing = bearing + (Observation.Angle - 180);
-            //bearing is now a number between -180 and 540
-            //Convert to a trig angle (0=E, 90=N, 180=W, ...)
-            bearing = 90 - bearing; //bearing = (90 - bearing) < 0 ? 450 - bearing : 90 - bearing;
-            //bearing is now a number between -450 and 270
-            //No need to normalize to 0..360, as trig functions don't care
-            //Trig functions do expect radians not degrees.
-            bearing = bearing * Math.PI / 180.0;
-            double birdX = gpsX + Observation.Distance * Math.Cos(bearing);
-            double birdY = gpsY + Observation.Distance * Math.Sin(bearing);
+            azimuth += (Observation.Angle - 180);
+
+            double birdX = Observation.GpsPoint.Location.X + Observation.Distance * Math.Cos(azimuth.ToTrigRadians());
+            double birdY = Observation.GpsPoint.Location.Y + Observation.Distance * Math.Sin(azimuth.ToTrigRadians());
             return new Point(birdX, birdY);
         }
-
-        //private Point GetLocationRelativeToTransectBearing()
-        //{
-        //    double gpsX = Observation.GpsPoint.Location.X;
-        //    double gpsY = Observation.GpsPoint.Location.Y;
-        //    //heading of transect as trig angle in radians (0=E, pi/2=N, pi=W, 3pi/2=S)
-        //    double bearing = Observation.GpsPoint.TrackLog.Transect.Bearing;
-        //    //convert observation angle: clockwise from stern(0 = stern, 90 = port 180 = bow, 270 = starboard) to radians
-        //    double observationAngle = (Observation.Angle - 180) * Math.PI / 180.0;
-        //    //subtract the observation angle since it is clockwise and the bearing (trig) angle is counterclockwise
-        //    bearing = bearing - observationAngle;
-        //    double birdX = gpsX + Observation.Distance * Math.Cos(bearing);
-        //    double birdY = gpsY + Observation.Distance * Math.Sin(bearing);
-        //    return new Point(birdX, birdY);
-        //}
 
         internal static BirdGroup FromPoint(Coordinate point)
         {
             return BirdGroups.Values.FirstOrDefault(birdGroups => birdGroups.Feature.FeatureDataRow.Geometry.Within(new Envelope(point,20,20)));
+        }
+
+        enum BirdGroupLocationRelativeTo
+        {
+            BoatHeading,
+            TransectHeading
         }
     }
 }

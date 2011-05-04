@@ -88,10 +88,10 @@ namespace AnimalObservations
         //TODO - consider a property returning null (multi-segment) or bearing.  bearing must be determined once at the start of the tracklog
 
         //Called when creating a birdgroup to correct the boat's heading to the transect heading
-        public double NormalizeHeading(GpsPoint gpsData)
+        public Azimuth NormalizeHeading(GpsPoint gpsData)
         {
             Polyline segment = GetClosestSegment(Shape, gpsData.Location);
-            double heading = GetHeadingFromSegment(segment);
+            Azimuth heading = GetAzimuthFromSegment(segment);
             //heading will be off by 180 degrees off if traveling from finish to start
             heading = OrientateHeading(heading, gpsData.Bearing);
             return heading;
@@ -110,7 +110,8 @@ namespace AnimalObservations
             return line;
         }
 
-        private static double GetHeadingFromSegment(Polyline line)
+        //returns the Azimuth of line from first vertex to last vertex
+        private static Azimuth GetAzimuthFromSegment(Polyline line)
         {
             if (line == null)
                 throw new ArgumentNullException("line");
@@ -119,15 +120,17 @@ namespace AnimalObservations
             //line should only have 2 point; regardless, ignore additional vertices.
             Coordinate firstPoint = points.First();
             Coordinate lastPoint = points.Last();
-            return Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
+            double angle = Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
+            return Azimuth.FromTrigAngleAsRadians(angle);
         }
 
-        private static double OrientateHeading(double transectHeading, double boatHeading)
+        private static Azimuth OrientateHeading(Azimuth transectAzimuth, Azimuth boatAzimuth)
         {
-            double diff = transectHeading - boatHeading;
-            if (-90 < diff && diff < 90)
-                return transectHeading;
-            return transectHeading < 180 ? transectHeading + 180 : transectHeading - 180;
+            //Azimuth subtraction yields a new azimuth, not the difference, so we need to use the azimuth's value to
+            double difference = transectAzimuth.Value - boatAzimuth.Value;
+            if (-90 < difference && difference < 90)
+                return transectAzimuth;
+            return transectAzimuth < 180 ? transectAzimuth + 180 : transectAzimuth - 180;
         }
 
     }
