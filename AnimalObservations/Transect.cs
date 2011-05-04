@@ -154,12 +154,13 @@ namespace AnimalObservations
 
     public static class TransectListExtension
     {
-        public static Transect GetNearest(this IEnumerable<Transect> transects, Coordinate coordinate)
+        public static Transect GetNearest(this IEnumerable<Transect> transects, Coordinate searchPoint)
         {
-            Debug.Assert(coordinate != null, "Fail, null coordinate in IEnumerable<Transect>.GetNearest()");
-
-            Geometry myLocation = new Point(coordinate);
-            Transect closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
+            Debug.Assert(searchPoint != null, "Fail, searchPoint is null in IEnumerable<Transect>.GetNearest()");
+            Debug.Assert(!searchPoint.IsEmpty, "Fail, searchPoint is empty in IEnumerable<Transect>.GetNearest()");
+            Transect closest = null;
+            Geometry myLocation = new Point(searchPoint);
+            closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
                                         .FirstOrDefault();
             return closest;
         }
