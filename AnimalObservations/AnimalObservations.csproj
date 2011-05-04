@@ -22,7 +22,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\..\..\..\ProgramData\ESRI\ArcGIS Mobile\Extensions\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\..\ProgramData\ESRI\ArcGIS Mobile\Extensions\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -76,6 +76,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Azimuth.cs" />
     <Compile Include="BirdGroup.cs" />
     <Compile Include="BirdGroup2.cs" />
     <Compile Include="EditObservationAttributesPage.xaml.cs">
@@ -120,6 +121,7 @@
   <ItemGroup>
     <Resource Include="Boat-icon.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
