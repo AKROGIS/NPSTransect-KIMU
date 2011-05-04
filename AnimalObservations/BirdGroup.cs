@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
@@ -115,7 +116,16 @@ namespace AnimalObservations
                     azimuth = Observation.GpsPoint.Bearing;
                     break;
                 default:
-                    azimuth = Observation.GpsPoint.TrackLog.Transect.NormalizeHeading(Observation.GpsPoint);
+                    try
+                    {
+                        //If this throws an exception, then fall back to the boat bearing
+                        azimuth = Observation.GpsPoint.TrackLog.Transect.NormalizedAzimuth(Observation.GpsPoint);
+                    }
+                    catch(Exception ex)
+                    {
+                        Trace.TraceError("Unable to compute azimuth of transect.  Using boat's azimuth.\n{0}", ex);
+                        azimuth = Observation.GpsPoint.Bearing;
+                    }
                     break;
             }
 

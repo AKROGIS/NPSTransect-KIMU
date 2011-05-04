@@ -88,36 +88,53 @@ namespace AnimalObservations
         //TODO - consider a property returning null (multi-segment) or bearing.  bearing must be determined once at the start of the tracklog
 
         //Called when creating a birdgroup to correct the boat's heading to the transect heading
-        public Azimuth NormalizeHeading(GpsPoint gpsData)
+        public Azimuth NormalizedAzimuth(GpsPoint gpsData)
         {
-            Polyline segment = GetClosestSegment(Shape, gpsData.Location);
-            Azimuth heading = GetAzimuthFromSegment(segment);
+            if (gpsData == null)
+                throw new ArgumentNullException("gpsData");
+
+            CoordinateCollection vertices = GetTwoClosestVertices(Shape, gpsData.Location);
+            Azimuth heading = GetAzimuthFromVertices(vertices);
             //heading will be off by 180 degrees off if traveling from finish to start
             heading = OrientateHeading(heading, gpsData.Bearing);
             return heading;
         }
 
-        private static Polyline GetClosestSegment(Geometry shape, Coordinate coordinate)
+        //Vertices must be adjacent in shape, i.e. the end points of the closest segment 
+        private static CoordinateCollection GetTwoClosestVertices(Geometry shape, Coordinate searchPoint)
         {
-            throw new NotImplementedException();
-            int partIndex, vertexIndex;
-            Polyline line;
-            Double distance;
-            Coordinate vertex;
-            shape.GetNearestVertex(coordinate, vertex, ref partIndex, ref vertexIndex, ref distance);
-            shape.CurrentPartIndex = partIndex;
-            shape.CurrentCoordinateIndex = vertexIndex;
-            return line;
+            if (shape == null)
+                throw new ArgumentNullException("shape");
+            if (searchPoint == null)
+                throw new ArgumentNullException("searchPoint");
+            if (searchPoint.IsEmpty)
+                throw new ArgumentException("searchPoint is not valid");
+            if (!shape.IsValid || shape.IsEmpty || (shape.Dimension != GeometryDimension.Line && shape.Dimension != GeometryDimension.Area))
+                throw new ArgumentException("shape is not valid");
+            int partIndex = -1;
+            int priorVertexIndex = -1;
+            Double unusedDistance = -1;
+            Coordinate foundPoint = null;
+            if (shape.GetNearestCoordinate(searchPoint, foundPoint, ref partIndex, ref priorVertexIndex, ref unusedDistance))
+            {
+                //priorVertexIndex + 1 will always be valid when shape is a valid, non-empty line or area
+                Coordinate pt1 = shape.Parts[partIndex][priorVertexIndex];
+                Coordinate pt2 = shape.Parts[partIndex][priorVertexIndex + 1];
+                if (pt1.SquareDistance(searchPoint) < pt2.SquareDistance(searchPoint))
+                    return new CoordinateCollection {pt1, pt2};
+                return new CoordinateCollection {pt2, pt1};
+            }
+            throw new InvalidOperationException("shape.GetNearestCoordinate(searchPoint) failed");
         }
 
         //returns the Azimuth of line from first vertex to last vertex
-        private static Azimuth GetAzimuthFromSegment(Polyline line)
+        private static Azimuth GetAzimuthFromVertices(CoordinateCollection points)
         {
-            if (line == null)
-                throw new ArgumentNullException("line");
-            //line should have only one part; regardless, ignore additional parts.
-            CoordinateCollection points = line.Parts[0];
-            //line should only have 2 point; regardless, ignore additional vertices.
+            if (points == null)
+                throw new ArgumentNullException("points");
+            if (points.LastIndex != 1 || points.IsARing)
+                throw new ArgumentException("vertices must contain two, and only two, non equal coordinates");
+
             Coordinate firstPoint = points.First();
             Coordinate lastPoint = points.Last();
             double angle = Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
