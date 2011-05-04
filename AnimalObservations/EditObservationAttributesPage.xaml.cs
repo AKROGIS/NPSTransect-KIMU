@@ -97,7 +97,15 @@ namespace AnimalObservations
             if (!string.IsNullOrEmpty(keyString))
             {
                 Char keyChar = keyString[0];
-                if (!_birdGroupInProgress.AcceptKey(keyChar))
+                if (_birdGroupInProgress.AcceptKey(keyChar))
+                {
+                    if (_birdGroupInProgress.IsComplete)
+                    {
+                        Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
+                        _birdGroupInProgress = new BirdGroup2();
+                    }
+                }
+                else
                 {
                     if (_birdGroupInProgress.IsValid)
                     {

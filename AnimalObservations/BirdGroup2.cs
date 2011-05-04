@@ -57,6 +57,16 @@ namespace AnimalObservations
             }
         }
 
+        internal bool IsComplete
+        {
+            get
+            {
+                return Behavior != BirdGroupBehavior.Pending &&
+                       Species != BirdGroupSpecies.Pending &&
+                       (GroupSize > 9 || GroupSize > 0 && !_previousWasDigit);
+            }
+        }
+
         public void Reset()
         {
             GroupSize = default(int);
