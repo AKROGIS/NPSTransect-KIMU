@@ -138,7 +138,7 @@ namespace AnimalObservations
 
             Coordinate firstPoint = points.First();
             Coordinate lastPoint = points.Last();
-            double angle = Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.Y);
+            double angle = Math.Atan2(lastPoint.Y - firstPoint.Y, lastPoint.X - firstPoint.X);
             return Azimuth.FromTrigAngleAsRadians(angle);
         }
 
