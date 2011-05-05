@@ -66,6 +66,7 @@ namespace AnimalObservations
             //   so the actual point of observation has already passed when this operation runs.
 
             //FIXME - Task.CurrentGpsPoint may be null if this thread caught the main thread between states.
+            //It only happens on occasion, but enough to be annoying.
             Debug.Assert(_task.CurrentGpsPoint != null, "Fail! Current GPS Point is null when recording an observation.");
             if (_task.CurrentGpsPoint == null)
                 return;

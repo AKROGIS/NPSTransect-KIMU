@@ -37,6 +37,7 @@ namespace AnimalObservations
             Debug.Assert(extents != null, "Fail, null extents in Transect.GetWithin()");
             var results = from transect in AllTransects
                           where transect.Shape.Intersects(extents)
+                          orderby(transect.Name)
                           select transect;
             return results;
         }
@@ -114,7 +115,7 @@ namespace AnimalObservations
             int partIndex = -1;
             int priorVertexIndex = -1;
             Double unusedDistance = -1;
-            Coordinate foundPoint = null;
+            var foundPoint = new Coordinate();
             if (shape.GetNearestCoordinate(searchPoint, foundPoint, ref partIndex, ref priorVertexIndex, ref unusedDistance))
             {
                 //priorVertexIndex + 1 will always be valid when shape is a valid, non-empty line or area
@@ -158,9 +159,12 @@ namespace AnimalObservations
         {
             Debug.Assert(searchPoint != null, "Fail, searchPoint is null in IEnumerable<Transect>.GetNearest()");
             Debug.Assert(!searchPoint.IsEmpty, "Fail, searchPoint is empty in IEnumerable<Transect>.GetNearest()");
-            Transect closest = null;
+            
+            if (searchPoint == null || searchPoint.IsEmpty)
+                return null;
+
             Geometry myLocation = new Point(searchPoint);
-            closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
+            Transect closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))
                                         .FirstOrDefault();
             return closest;
         }

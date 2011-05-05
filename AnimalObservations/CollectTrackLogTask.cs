@@ -271,7 +271,13 @@ namespace AnimalObservations
                 }
                 else
                 {
-                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(_gpsConnection.Longitude, _gpsConnection.Latitude);
+                    double latitude = _gpsConnection.Latitude;
+                    double longitude = _gpsConnection.Longitude;
+                    //Offset Regan's office to GLBA main dock
+                    latitude -= 2.7618;
+                    longitude += 13.9988;
+                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
+                    //MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(_gpsConnection.Longitude, _gpsConnection.Latitude);
                 }
             }
             //FIXME - don't do this when collecting attributes

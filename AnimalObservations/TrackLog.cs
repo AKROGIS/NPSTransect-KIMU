@@ -157,7 +157,7 @@ namespace AnimalObservations
 
         public void SyncPropertiesToFeature()
         {
-            Feature.FeatureDataRow["TransectGID"] = Transect.Guid;
+            Feature.FeatureDataRow["TransectID"] = Transect.Name;
             Feature.FeatureDataRow["Vessel"] = Vessel ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Recorder"] = DataRecorder ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Observer1"] = Observer1 ?? (object)DBNull.Value;
