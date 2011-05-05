@@ -42,6 +42,10 @@ namespace AnimalObservations
             return results;
         }
 
+        //TODO - Consider removing the FromGUID() family of initializers
+        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
+        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
+
         static public Transect FromGuid(Guid guid)
         {
             if (_transects == null)
@@ -82,7 +86,7 @@ namespace AnimalObservations
         {
             Guid = new Guid(data.GetGlobalId().ToByteArray());
             Shape = data.GetGeometry();
-            Name = data.GetString(data.GetOrdinal("ID"));
+            Name = data.GetString(data.GetOrdinal("TransectID"));
             //Bearing = CalculateBearing(Shape as Polyline);
         }
 

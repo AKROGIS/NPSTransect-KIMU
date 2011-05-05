@@ -13,7 +13,7 @@ namespace AnimalObservations
 
         //FIXME - Should update location based on a property change event on Observation.Angle/Distance.
 
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Murrelets");
+        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Bird Groups");
 
         static readonly Dictionary<Guid, BirdGroup> BirdGroups = new Dictionary<Guid, BirdGroup>();
 
@@ -29,6 +29,10 @@ namespace AnimalObservations
 
         private BirdGroup()
         { }
+
+        //TODO - Consider removing the FromGuid() family of initializers
+        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
+        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
 
         public static BirdGroup FromGuid(Guid guid)
         {

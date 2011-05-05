@@ -9,7 +9,7 @@ namespace AnimalObservations
 {
     public class GpsPoint
     {
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GPS Sample Locations");
+        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GPS Points");
 
         static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
 
@@ -30,6 +30,10 @@ namespace AnimalObservations
 
         private  GpsPoint()
         {}
+
+        //TODO - Consider removing the FromGUID() family of initializers
+        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
+        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
 
         public static GpsPoint FromGuid(Guid guid)
         {
@@ -72,7 +76,8 @@ namespace AnimalObservations
 
         private void LoadAttributes()
         {
-            Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+            //Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+            Guid = (Guid)Feature.FeatureDataRow["GpsPointID"];
             TrackLog = TrackLog.FromGuid((Guid)Feature.FeatureDataRow["TrackID"]);
 
             Latitude = (double)Feature.FeatureDataRow["Lat_dd"];
@@ -107,6 +112,7 @@ namespace AnimalObservations
         public void Save()
         {
             Feature.Geometry = new Point(Location);
+            Feature.FeatureDataRow["GpsPointID"] = Guid;
             Feature.FeatureDataRow["TrackID"] = TrackLog.Guid;
             Feature.FeatureDataRow["Lat_dd"] = Latitude;
             Feature.FeatureDataRow["Long_dd"] = Longitude;

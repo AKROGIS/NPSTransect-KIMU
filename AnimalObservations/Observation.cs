@@ -28,6 +28,10 @@ namespace AnimalObservations
             BirdGroups = new ObservableCollection<BirdGroup2>();
         }
 
+        //TODO - Consider removing the FromGUID() family of initializers
+        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
+        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
+
         public static Observation FromGuid(Guid guid)
         {
             if (Observations.ContainsKey(guid))
@@ -43,6 +47,18 @@ namespace AnimalObservations
             //FIXME - load related birdgroups 
             Observations[observation.Guid] = observation;
             return observation;
+        }
+
+        internal static Observation FromPoint(Coordinate point)
+        {
+            Debug.Assert(point != null, "Fail, null point in Observation.FromPoint()");
+
+            BirdGroup birdGroup = BirdGroup.FromPoint(point);
+            if (birdGroup != null)
+                return birdGroup.Observation;
+
+            //FIXME - this only searches the previously loaded/created observations
+            return Observations.Values.FirstOrDefault(observation => observation.Feature.FeatureDataRow.Geometry.Within(new Envelope(point, 20, 20)));
         }
 
         public static Observation CreateWith(GpsPoint gpsPoint)
@@ -69,7 +85,8 @@ namespace AnimalObservations
 
         private void LoadAttributes1()
         {
-            Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+            //Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+            Guid = (Guid)Feature.FeatureDataRow["ObservationID"];
             GpsPoint = GpsPoint.FromGuid((Guid)Feature.FeatureDataRow["GPSPointID"]);
         }
 
@@ -84,6 +101,7 @@ namespace AnimalObservations
         public void Save()
         {
             Feature.Geometry = new Point(GpsPoint.Location);
+            Feature.FeatureDataRow["ObservationID"] = Guid;
             Feature.FeatureDataRow["GPSPointID"] = GpsPoint.Guid;
             Feature.FeatureDataRow["Angle"] = Angle;
             Feature.FeatureDataRow["Distance"] = Distance;
@@ -97,18 +115,6 @@ namespace AnimalObservations
                 bird.Save(this);
         }
 
-
-        internal static Observation FromPoint(Coordinate point)
-        {
-            Debug.Assert(point != null, "Fail, null point in Observation.FromPoint()");
-
-            BirdGroup birdGroup = BirdGroup.FromPoint(point);
-            if (birdGroup != null)
-                return birdGroup.Observation;
-
-            //FIXME - this only searches the previously loaded/created observations
-            return Observations.Values.FirstOrDefault(observation => observation.Feature.FeatureDataRow.Geometry.Within(new Envelope(point, 20, 20)));
-        }
     }
 }
 

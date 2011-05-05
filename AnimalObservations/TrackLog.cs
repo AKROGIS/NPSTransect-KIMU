@@ -32,6 +32,10 @@ namespace AnimalObservations
         private TrackLog()
         { }
 
+        //TODO - Consider removing the FromGUID() family of initializers
+        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
+        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
+
         public static TrackLog FromGuid(Guid guid)
         {
             if (TrackLogs.ContainsKey(guid))
@@ -157,6 +161,7 @@ namespace AnimalObservations
 
         public void SyncPropertiesToFeature()
         {
+            Feature.FeatureDataRow["TrackID"] = Guid;
             Feature.FeatureDataRow["TransectID"] = Transect.Name;
             Feature.FeatureDataRow["Vessel"] = Vessel ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Recorder"] = DataRecorder ?? (object)DBNull.Value;

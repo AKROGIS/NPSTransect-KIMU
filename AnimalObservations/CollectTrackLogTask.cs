@@ -322,6 +322,7 @@ namespace AnimalObservations
         private void DrawBoat(Coordinate location, double heading)
         {
             //Only update the UI on the UI thread
+            //FIXME - this sometimes fails on startup
             if (!_boat.Dispatcher.CheckAccess())
             {
                 _boat.Dispatcher.BeginInvoke((System.Threading.ThreadStart)(() => DrawBoat(location, heading)));
