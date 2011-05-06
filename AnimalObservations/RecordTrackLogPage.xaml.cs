@@ -49,7 +49,12 @@ namespace AnimalObservations
 
             //FIXME - what if there are open observations?
             _task.StopRecording();
-            _trackLog.Save();
+            //FIXME - add try/catch, or ensure no exceptions can be thrown during save
+            //FIXME provide options to user on how to proceed if save failed
+            if (!_trackLog.Save())
+            {
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving track log", "Save Failed");
+            }
             ((SetupTrackLogPage)PreviousPage).UpdateSource();
             MobileApplication.Current.Transition(PreviousPage);
         }
@@ -96,7 +101,8 @@ namespace AnimalObservations
             
             //Check to see if there is an birdgroup at this location.  If so edit it, be done
             Coordinate mapPoint = MobileApplication.Current.Map.ToMap(drawingPoint);
-            Observation observation = Observation.FromPoint(mapPoint);
+            var extents = new Envelope(mapPoint, MobileUtilities.SearchRadius * 2, MobileUtilities.SearchRadius * 2);
+            Observation observation = Observation.FromEnvelope(extents);
             if (observation != null)
             {
                 _task.AddObservation(observation);

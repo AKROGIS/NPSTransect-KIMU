@@ -230,16 +230,11 @@ namespace AnimalObservations
 
         void ProcessGpsErrorEventFromConnection(object sender, GpsErrorEventArgs e)
         {
-            //FIXME - save any open edits, and wait for the GPS to recover
-            //FIXME - Change logging status?  How do toggle it back on if connection returns? 
-            CurrentTrackLog.Save();
+            //Save, but don't close any open edits
+            PostChanges();
             ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(e.Exception.Message, "GPS Error");
-            //FIXME - Is this necessary if we are handling the GPSClosed event?
-            //GpsConnection GpsConn = sender as GpsConnection;
-            //if (GpsConnection == null)
-            //    IsGPSConnected = false;
-            //else
-            //    IsGPSConnected = GpsConn.IsOpen;
+            //Wait for the GPS to recover
+            //FIXME - Change logging status?  How do toggle it back on if connection returns? 
         }
 
         void ProcessGpsClosedEventFromConnection(object sender, EventArgs e)
@@ -247,11 +242,20 @@ namespace AnimalObservations
             //FIXME - Close any open pages???
             if (_isRecording)
             {
-                CurrentTrackLog.Save();
+                PostChanges();
                 StopRecording();
             }
         }
 
+        void PostChanges()
+        {
+            //ignore save errors here (there should be none), we will check/report when the tracklog is finalized.
+            CurrentTrackLog.Save();
+            foreach (var observation in OpenObservations)
+            {
+                observation.Save();
+            }
+        }
         void ProcessGpsChangedEventFromConnection(object sender, EventArgs e)
         {
             if (_gpsConnection.FixStatus == GpsFixStatus.Invalid)

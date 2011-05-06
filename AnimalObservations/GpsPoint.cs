@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
@@ -10,8 +11,7 @@ namespace AnimalObservations
     public class GpsPoint
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GPS Points");
-
-        static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
+        private static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
 
         public Feature Feature { get; private set; }
         public Guid Guid { get; private set; }
@@ -28,12 +28,11 @@ namespace AnimalObservations
         public double Speed { get; private set; }
         public double Bearing { get; private set; }
 
+
+        #region constructors
+
         private  GpsPoint()
         {}
-
-        //TODO - Consider removing the FromGUID() family of initializers
-        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
-        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
 
         public static GpsPoint FromGuid(Guid guid)
         {
@@ -42,8 +41,12 @@ namespace AnimalObservations
 
             var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
             if (feature == null)
+            {
+                Trace.TraceError("Fail! Unable to get feature with id = {0} from {1}", guid, FeatureLayer.Name);
                 return null;
-            var gpsPoint = new GpsPoint {Feature = feature};
+            }
+
+            var gpsPoint = new GpsPoint { Feature = feature };
             gpsPoint.LoadAttributes();
             GpsPoints[gpsPoint.Guid] = gpsPoint;
             return gpsPoint;
@@ -60,7 +63,11 @@ namespace AnimalObservations
 
             var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
             if (feature == null)
+            {
+                Trace.TraceError("Fail! Unable to create a new feature in {0}", FeatureLayer.Name);
                 return null;
+            }
+
             var gpsPoint = new GpsPoint
                                {
                                    Feature = feature,
@@ -76,13 +83,10 @@ namespace AnimalObservations
 
         private void LoadAttributes()
         {
-            //Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
             Guid = (Guid)Feature.FeatureDataRow["GpsPointID"];
             TrackLog = TrackLog.FromGuid((Guid)Feature.FeatureDataRow["TrackID"]);
-
             Latitude = (double)Feature.FeatureDataRow["Lat_dd"];
             Longitude = (double)Feature.FeatureDataRow["Long_dd"];
-            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
             GpsTime = (DateTime)Feature.FeatureDataRow["Time_utc"];
             LocalTime = (DateTime)Feature.FeatureDataRow["Time_local"];
             Hdop = (double)Feature.FeatureDataRow["HDOP"];
@@ -90,16 +94,20 @@ namespace AnimalObservations
             SatelliteFixStatus = (GpsFixStatus)Feature.FeatureDataRow["GPS_Fix_Status"];
             Speed = (double)Feature.FeatureDataRow["Speed"];
             Bearing = (double)Feature.FeatureDataRow["Bearing"];
+
+            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
         }
 
         private void LoadAttributes(GpsConnection gpsConnection)
         {
-            Latitude = gpsConnection.Latitude;
-            Longitude = gpsConnection.Longitude;
-            //Offset Regan's office to GLBA main dock
-            Latitude -= 2.7618;
-            Longitude += 13.9988;
-            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
+                Latitude = gpsConnection.Latitude;
+                Longitude = gpsConnection.Longitude;
+                //Offset Regan's office to GLBA main dock
+                Latitude -= 2.7618;
+                Longitude += 13.9988;
+                Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
+
+            //Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
             GpsTime = gpsConnection.DateTime;
             LocalTime = GpsTime.ToLocalTime();
             Hdop = gpsConnection.HorizontalDilutionOfPrecision;
@@ -108,6 +116,10 @@ namespace AnimalObservations
             Speed = gpsConnection.Speed;
             Bearing = gpsConnection.Course;
         }
+
+        #endregion
+
+        #region update and save
 
         public void Save()
         {
@@ -126,5 +138,6 @@ namespace AnimalObservations
             Feature.SaveEdits();
         }
 
+        #endregion
     }
 }

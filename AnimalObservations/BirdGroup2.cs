@@ -20,6 +20,7 @@ namespace AnimalObservations
 
     public class BirdGroup2
     {
+        //public properties for WPF/XAML interface binding
         public int GroupSize { get; set; }
         public BirdGroupBehavior Behavior { get; set; }
         public BirdGroupSpecies Species { get; set; }
@@ -47,7 +48,7 @@ namespace AnimalObservations
             return DbLink.Save();
         }
 
-        internal bool IsValid
+        public bool IsValid
         {
             get
             {
@@ -57,13 +58,13 @@ namespace AnimalObservations
             }
         }
 
-        internal bool IsComplete
+        public bool IsComplete
         {
             get
             {
                 return Behavior != BirdGroupBehavior.Pending &&
                        Species != BirdGroupSpecies.Pending &&
-                       (GroupSize > 9 || GroupSize > 0 && !_previousWasDigit);
+                       (GroupSize > 9 || GroupSize > 0 && !_previousCharacterWasDigit);
             }
         }
 
@@ -74,33 +75,33 @@ namespace AnimalObservations
             Species = default(BirdGroupSpecies);
             Comment = default(string);
             DbLink = default(BirdGroup);
-            _previousWasDigit = default(bool);
+            _previousCharacterWasDigit = default(bool);
         }
 
         public bool AcceptKey(char character)
         {
             if (!Char.IsLetterOrDigit(character))
             {
-                _previousWasDigit = false;
+                _previousCharacterWasDigit = false;
                 return false;
             }
 
             if (Char.IsDigit(character))
             {
-                if (GroupSize > 0 && !_previousWasDigit)
+                if (GroupSize > 0 && !_previousCharacterWasDigit)
                 {
-                    //Digit-letter-digit combo is invalid.
-                    _previousWasDigit = true;
+                    //Digit-nondigit-digit sequence is invalid for a single bird.
+                    _previousCharacterWasDigit = true;
                     return false;
                 }
-                _previousWasDigit = true;
+                _previousCharacterWasDigit = true;
                 if (GroupSize > 9)
                     return false;
                 int digit = int.Parse(character.ToString());
                 GroupSize = GroupSize * 10 + digit;
                 return true;
             }
-            _previousWasDigit = false;
+            _previousCharacterWasDigit = false;
             switch (character)
             {
                 case 'W':
@@ -138,6 +139,6 @@ namespace AnimalObservations
             }
         }
 
-        private bool _previousWasDigit;
+        private bool _previousCharacterWasDigit;
     }
 }

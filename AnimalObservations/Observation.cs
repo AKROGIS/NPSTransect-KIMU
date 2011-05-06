@@ -12,35 +12,41 @@ namespace AnimalObservations
     public class Observation
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Observations");
+        private static readonly Dictionary<Guid, Observation> Observations = new Dictionary<Guid, Observation>();
 
-        static readonly Dictionary<Guid, Observation> Observations = new Dictionary<Guid, Observation>();
+        private Feature Feature { get; set; }
+        internal Guid Guid { get; private set; }
+        internal GpsPoint GpsPoint { get; private set; }
 
-        public Feature Feature { get; private set; }
-        public Guid Guid { get; private set; }
-
-        public GpsPoint GpsPoint { get; private set; }
+        //public properties for WPF/XAML interface binding
         public int Angle { get; set; }
         public int Distance { get; set; }
         public ObservableCollection<BirdGroup2> BirdGroups { get; private set; }
+
+        #region Constructors
 
         private Observation()
         {
             BirdGroups = new ObservableCollection<BirdGroup2>();
         }
 
-        //TODO - Consider removing the FromGUID() family of initializers
-        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
-        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
+        //FIXME restructure the FromGuid() family of initializers.  Need to pass a query to MobileUtilities.GetFeature
+        //since the where clause will differ by featurelayer.
+        //See BirdGroup for a recommended refactoring.
 
-        public static Observation FromGuid(Guid guid)
+        internal static Observation FromGuid(Guid guid)
         {
             if (Observations.ContainsKey(guid))
                 return Observations[guid];
 
             var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
             if (feature == null)
+            {
+                Trace.TraceError("Fail! Unable to get feature with id = {0} from {1}", guid, FeatureLayer.Name);
                 return null;
-            var observation = new Observation {Feature = feature};
+            }
+
+            var observation = new Observation { Feature = feature };
 
             observation.LoadAttributes1();
             observation.LoadAttributes2();
@@ -49,26 +55,33 @@ namespace AnimalObservations
             return observation;
         }
 
-        internal static Observation FromPoint(Coordinate point)
+        internal static Observation FromEnvelope(Envelope extents)
         {
-            Debug.Assert(point != null, "Fail, null point in Observation.FromPoint()");
+            if (extents == null)
+            {
+                Trace.TraceError("Fail! null search point in Observation.FromPoint()");
+                return null;                
+            }
 
-            BirdGroup birdGroup = BirdGroup.FromPoint(point);
+            //FIXME - this only searches the previously loaded/created birdgroups/observations
+            BirdGroup birdGroup = BirdGroup.FromEnvelope(extents);
             if (birdGroup != null)
                 return birdGroup.Observation;
-
-            //FIXME - this only searches the previously loaded/created observations
-            return Observations.Values.FirstOrDefault(observation => observation.Feature.FeatureDataRow.Geometry.Within(new Envelope(point, 20, 20)));
+            return Observations.Values.FirstOrDefault(observation => observation.Feature.FeatureDataRow.Geometry.Within(extents));
         }
 
-        public static Observation CreateWith(GpsPoint gpsPoint)
+        internal static Observation CreateWith(GpsPoint gpsPoint)
         {
             if (gpsPoint == null)
                 throw new ArgumentNullException("gpsPoint");
 
             var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
             if (feature == null)
+            {
+                Trace.TraceError("Fail! Unable to create a new feature in {0}", FeatureLayer.Name);
                 return null;
+            }
+
             var observation = new Observation
                                   {
                                       Feature = feature,
@@ -98,23 +111,30 @@ namespace AnimalObservations
                 Distance = (int)Feature.FeatureDataRow["Distance"];
         }
 
-        public void Save()
+        #endregion
+
+        #region Save/Update
+
+        internal bool Save()
         {
             Feature.Geometry = new Point(GpsPoint.Location);
             Feature.FeatureDataRow["ObservationID"] = Guid;
             Feature.FeatureDataRow["GPSPointID"] = GpsPoint.Guid;
             Feature.FeatureDataRow["Angle"] = Angle;
             Feature.FeatureDataRow["Distance"] = Distance;
-            Feature.SaveEdits();
-            SaveBirds();
+            return Feature.SaveEdits() && SaveBirds();
         }
 
-        private void SaveBirds()
+        private bool SaveBirds()
         {
+            bool failed = false;
             foreach (BirdGroup2 bird in BirdGroups)
-                bird.Save(this);
+                if (!bird.Save(this))
+                    failed = true;
+            return !failed;
         }
 
+        #endregion
     }
 }
 

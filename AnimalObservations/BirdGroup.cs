@@ -11,16 +11,19 @@ namespace AnimalObservations
     public class BirdGroup
     {
 
-        //FIXME - Should update location based on a property change event on Observation.Angle/Distance.
+        //FIXME - sort out the difference between:
+        //  1) aborting the creation of a new object
+        //  2) canceling changes to an existing object
+        //  3) deleting an existing object
 
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Bird Groups");
+        private static readonly Dictionary<Guid, BirdGroup> BirdGroups = new Dictionary<Guid, BirdGroup>();
 
-        static readonly Dictionary<Guid, BirdGroup> BirdGroups = new Dictionary<Guid, BirdGroup>();
+        private Feature Feature { get; set; }
+        internal Guid Guid { get; private set; }
+        internal Observation Observation { get; private set; }
 
-        public Feature Feature { get; private set; }
-        public Guid Guid { get; private set; }
-
-        public Observation Observation { get; private set; }
+        //public properties for WPF/XAML interface binding
         public int Size { get; set; }
         public char Behavior { get; set; }
         public char Species { get; set; }
@@ -30,55 +33,64 @@ namespace AnimalObservations
         private BirdGroup()
         { }
 
-        //TODO - Consider removing the FromGuid() family of initializers
-        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
-        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
+        internal static BirdGroup FromEnvelope(Envelope extents)
+        {
+            BirdGroup birdGroup = BirdGroups.Values.FirstOrDefault(birdGroups => birdGroups.Feature.FeatureDataRow.Geometry.Within(extents));
+            if (birdGroup != null)
+                return birdGroup;
+            return FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+        }
 
-        public static BirdGroup FromGuid(Guid guid)
+        [Obsolete]
+        private static BirdGroup FromGuid(Guid guid)
         {
             if (BirdGroups.ContainsKey(guid))
                 return BirdGroups[guid];
 
             var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
             if (feature == null)
+            {
+                Trace.TraceError("Fail! Unable to get feature with id = {0} from {1}", guid, FeatureLayer.Name);
                 return null;
-            var birdGroup = new BirdGroup { Feature = feature };
-            birdGroup.LoadAttributes1();
-            birdGroup.LoadAttributes2();
-            BirdGroups[birdGroup.Guid] = birdGroup;
-            return birdGroup;
+            }
+            return FromFeature(feature);
         }
 
-        public static BirdGroup CreateWith(Observation observation)
+        internal static BirdGroup CreateWith(Observation observation)
         {
             if (observation == null)
-                throw new ArgumentNullException("observation");
+            {
+                Trace.TraceError("Fail! null observation in BirdGroup.CreateWith(observation)");
+                return null;
+            }
 
             var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
             if (feature == null)
+            {
+                Trace.TraceError("Fail! Unable to create a new feature in {0}", FeatureLayer.Name);
                 return null;
-            var birdGroup = new BirdGroup
-                                {
-                                    Feature = feature,
-                                    Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                    Observation = observation
-                                };
+            }
 
-            //get default attributes
-            birdGroup.LoadAttributes2();
-            BirdGroups[birdGroup.Guid] = birdGroup;
-            //birdGroup.Save();
+            var birdGroup = FromFeature(feature);
+            birdGroup.Observation = observation;
             return birdGroup;
         }
 
-        private void LoadAttributes1()
+        private static BirdGroup FromFeature(Feature feature)
         {
-            Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
-            Observation = Observation.FromGuid((Guid)Feature.FeatureDataRow["ObservationID"]);
+            var birdGroup = new BirdGroup { Feature = feature };
+            birdGroup.LoadAttributes();
+            BirdGroups[birdGroup.Guid] = birdGroup;
+            return birdGroup;
         }
 
-        private void LoadAttributes2()
+        private void LoadAttributes()
         {
+            //BirdGroups do not have a primary key GUID, so use GlobalID
+            Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+            //For new features, ObservationID will be null, so we won't be loading an observation feature
+            if (Feature.FeatureDataRow["ObservationID"] is Guid)
+                Observation = Observation.FromGuid((Guid)Feature.FeatureDataRow["ObservationID"]);
             if (Feature.FeatureDataRow["GroupSize"] is int)
                 Size = (int)Feature.FeatureDataRow["GroupSize"];
             if (Feature.FeatureDataRow["Behavior"] is string)
@@ -89,7 +101,7 @@ namespace AnimalObservations
                 Comments = (string)Feature.FeatureDataRow["Comments"];
         }
 
-        public bool Save()
+        internal bool Save()
         {
             Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.TransectHeading);
             Feature.FeatureDataRow["ObservationID"] = Observation.Guid;
@@ -100,12 +112,7 @@ namespace AnimalObservations
             return Feature.SaveEdits();
         }
 
-        //FIXME - sort out the difference between:
-        //  1) aborting the creation of a new object
-        //  2) canceling changes to an existing object
-        //  3) deleting an existing object
-
-        public void Delete()
+        internal void Delete()
         {
             BirdGroups.Remove(Guid);
             Feature.CancelEdit();
@@ -139,11 +146,6 @@ namespace AnimalObservations
             double birdX = Observation.GpsPoint.Location.X + Observation.Distance * Math.Cos(azimuth.ToTrigRadians());
             double birdY = Observation.GpsPoint.Location.Y + Observation.Distance * Math.Sin(azimuth.ToTrigRadians());
             return new Point(birdX, birdY);
-        }
-
-        internal static BirdGroup FromPoint(Coordinate point)
-        {
-            return BirdGroups.Values.FirstOrDefault(birdGroups => birdGroups.Feature.FeatureDataRow.Geometry.Within(new Envelope(point,20,20)));
         }
 
         enum BirdGroupLocationRelativeTo

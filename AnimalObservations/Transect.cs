@@ -11,72 +11,34 @@ namespace AnimalObservations
     public class Transect
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Transects");
+        private static readonly Dictionary<string, Transect> Transects = new Dictionary<string, Transect>();
 
-        static Dictionary<Guid, Transect> _transects;
-
-        public Guid Guid { get; private set; }
         public Geometry Shape { get; private set; }
         public string Name { get; private set; }
-        //public double Bearing { get; private set; }
 
-        private Transect()
-        {}
+        #region Class Constructors
 
-        static public IEnumerable<Transect> AllTransects
+        static Transect()
         {
-            get
-            {
-                if (_transects == null)
-                    LoadAllTransectsFromDataSource();
-                return _transects.Values;
-            }
-        }
-
-        static public IEnumerable<Transect> GetWithin(Envelope extents)
-        {
-            Debug.Assert(extents != null, "Fail, null extents in Transect.GetWithin()");
-            var results = from transect in AllTransects
-                          where transect.Shape.Intersects(extents)
-                          orderby(transect.Name)
-                          select transect;
-            return results;
-        }
-
-        //TODO - Consider removing the FromGUID() family of initializers
-        //BirdGroup.FromGuid() calls Observation.FromGuid() calls GpsPoint.FromGuid() calls TrackLog.FromGuid();
-        //Nobody calls BirdGroup.FromGuid() or Transect.FromGuid()
-
-        static public Transect FromGuid(Guid guid)
-        {
-            if (_transects == null)
-                LoadAllTransectsFromDataSource();
-            return _transects.ContainsKey(guid) ? _transects[guid] : null;
-        }
-
-        static public Transect FromName(string name)
-        {
-            if (_transects == null)
-                LoadAllTransectsFromDataSource();
-            return _transects.Values.FirstOrDefault(transect => transect.Name == name);
+            LoadAllTransectsFromDataSource();
         }
 
         private static void LoadAllTransectsFromDataSource()
         {
-            _transects = new Dictionary<Guid, Transect>();
-            using (FeatureDataReader data = FeatureLayer.GetDataReader(new QueryFilter(), EditState.Current))
+            using (FeatureDataReader data = FeatureLayer.GetDataReader(new QueryFilter(), EditState.Original))
             {
                 while (data.Read())
                 {
                     var transect = new Transect();
-                    //If we can't load a transect for some reason (i.e bad geometry, missing values, etc), then skip it
+                    //If we can't load a transect for some reason (i.e bad geometry, missing values, duplicate name), then skip it
                     try
                     {
                         transect.LoadAttributes(data);
-                        _transects[transect.Guid] = transect;
+                        Transects[transect.Name] = transect;
                     }
                     catch (Exception ex)
                     {
-                        Debug.Print("Read a bad transect. " + ex.Message);
+                        Trace.TraceError("Read a bad transect. Error Message: {0}" + ex.Message);
                     }
                 }
             }
@@ -84,13 +46,45 @@ namespace AnimalObservations
 
         private void LoadAttributes(FeatureDataReader data)
         {
-            Guid = new Guid(data.GetGlobalId().ToByteArray());
             Shape = data.GetGeometry();
             Name = data.GetString(data.GetOrdinal("TransectID"));
-            //Bearing = CalculateBearing(Shape as Polyline);
         }
 
-        //TODO - consider a property returning null (multi-segment) or bearing.  bearing must be determined once at the start of the tracklog
+        #endregion
+
+        #region Instance Constructors
+
+        private Transect()
+        {}
+
+        static public Transect FromName(string name)
+        {
+            return Transects.ContainsKey(name) ? Transects[name] : null;
+        }
+
+        #endregion
+
+        #region Lists of Transects
+
+        static public IEnumerable<Transect> GetWithin(Envelope extents)
+        {
+            if (extents == null)
+                return Enumerable.Empty<Transect>();
+            var results = from transect in AllTransects
+                          where transect.Shape.Intersects(extents)
+                          orderby (transect.Name)
+                          select transect;
+            return results;
+        }
+
+        static public IEnumerable<Transect> AllTransects
+        {
+            get { return Transects.Values; }
+        }
+
+        #endregion
+
+        #region bearing calculations
 
         //Called when creating a birdgroup to correct the boat's heading to the transect heading
         public Azimuth NormalizedAzimuth(GpsPoint gpsData)
@@ -155,17 +149,20 @@ namespace AnimalObservations
             return transectAzimuth < 180 ? transectAzimuth + 180 : transectAzimuth - 180;
         }
 
+        #endregion
     }
+
+
 
     public static class TransectListExtension
     {
         public static Transect GetNearest(this IEnumerable<Transect> transects, Coordinate searchPoint)
         {
-            Debug.Assert(searchPoint != null, "Fail, searchPoint is null in IEnumerable<Transect>.GetNearest()");
-            Debug.Assert(!searchPoint.IsEmpty, "Fail, searchPoint is empty in IEnumerable<Transect>.GetNearest()");
-            
             if (searchPoint == null || searchPoint.IsEmpty)
-                return null;
+            {
+                Trace.TraceWarning("searchPoint is null or empty in IEnumerable<Transect>.GetNearest()");
+                return transects.FirstOrDefault();
+            }
 
             Geometry myLocation = new Point(searchPoint);
             Transect closest = transects.OrderBy(transect => transect.Shape.Distance(myLocation))

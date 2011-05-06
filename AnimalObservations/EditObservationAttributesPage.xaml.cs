@@ -141,8 +141,12 @@ namespace AnimalObservations
             //Save and close the current observation attribute page
             //Transition to next in list, or if empty, previous page
 
-            //ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Saving Changes", "Ok");
-            Task.ActiveObservation.Save();
+            //FIXME - add try/catch, or ensure no exceptions can be thrown during save
+            //FIXME provide options to user on how to proceed if save failed
+            if (!Task.ActiveObservation.Save())
+            {
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving observation/bird groups", "Save Failed");
+            }
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
                 MobileApplication.Current.Transition(PreviousPage);

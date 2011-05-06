@@ -89,24 +89,14 @@ namespace AnimalObservations
             MobileApplication.Current.Transition(PreviousPage);
         }
 
-        //TODO - this can be removed, since data is always valid, however it doesn't seem to hurt
-        protected override bool CanExecuteOkCommand()
-        {
-            if (Task == null || Task.CurrentTrackLog == null)
-                return false;
-            Task.CurrentTrackLog.SyncPropertiesToFeature();
-            return Task.CurrentTrackLog.Feature.HasValidAttributes;
-        }
-
         protected override void OnOkCommandExecute()
         {
             //Save tracklog attributes, and begin gps logging, transition to new page
 
             Task.StartRecording();
             Task.CurrentTrackLog.StartingTime = DateTime.Now;
-            //At this point geometry is invalid, so we just sync the attributes.
-            //As points are collected, the feature will be periodically saved to disk
-            Task.CurrentTrackLog.SyncPropertiesToFeature();
+            //At this point geometry is invalid, so we don't bother saving.
+            //The tracklog will save itself as soon as it has two points, or a significant change in geometry. 
             MobileApplication.Current.Transition(new RecordTrackLogPage());
         }
 
