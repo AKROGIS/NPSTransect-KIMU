@@ -16,8 +16,8 @@ namespace AnimalObservations
 
             InitializeComponent();
 
-            Title = "Track Log Properties";
-            Note = "Common observation attributes for <un-named> transect";
+            Title = "Track Log Setup";
+            Note = "Enter information common to pending observations";
 
             // page icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
@@ -60,10 +60,12 @@ namespace AnimalObservations
 
             if (Task.DefaultTrackLog == null)
             {
+                //TODO - Add try/catch - CreateWith() may throw an exception
                 Task.CurrentTrackLog = TrackLog.CreateWith(Transects.GetNearest(Task.MostRecentLocation));
             }
             else
             {
+                //TODO - Add try/catch - CloneFrom() may throw an exception
                 Task.CurrentTrackLog = TrackLog.CloneFrom(Task.DefaultTrackLog);
                 Task.CurrentTrackLog.Transect = Transects.GetNearest(Task.MostRecentLocation);
             }

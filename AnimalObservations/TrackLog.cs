@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
@@ -33,100 +32,80 @@ namespace AnimalObservations
         private TrackLog()
         { }
 
+        //May return null if no feature is found with matching guid
         internal static TrackLog FromGuid(Guid guid)
         {
             if (TrackLogs.ContainsKey(guid))
                 return TrackLogs[guid];
 
-            var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
-            if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to get feature with id = {0} from {1}",guid, FeatureLayer.Name);
-                return null;
-            }
-
-            var trackLog = new TrackLog
-                               {
-                                   Feature = feature,
-                                   Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                   //warning - Transect.FromName() may be null - would indicate a corrupt database.
-                                   Transect = Transect.FromName((string) feature.FeatureDataRow["TransectID"])
-                               };
-
-            trackLog.LoadAttributes();
-
-            TrackLogs[trackLog.Guid] = trackLog;
+            string whereClause = string.Format("TrackID = {0}", guid);
+            TrackLog trackLog = CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+            if (trackLog != null && trackLog.Transect == null)
+                throw new ApplicationException("Existing track log has no transect");
             return trackLog;
         }
 
         internal static TrackLog CreateWith(Transect transect)
         {
-            if (transect != null)
-            {
-                Trace.TraceError("Fail! transect is null in TrackLog.CreateWith()");
-                return null;
-            }
-            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to create a new feature in {0}", FeatureLayer.Name);
-                return null;
-            }
+            if (transect == null)
+                throw new ArgumentNullException("transect");
 
-            feature.Geometry = new Polyline();
-            var trackLog = new TrackLog
-                               {
-                                   Feature = feature,
-                                   Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                   Transect = transect
-                               };
-
-            trackLog.LoadAttributes();
-
-            TrackLogs[trackLog.Guid] = trackLog;
+            //May throw an exception, but should never return null
+            var trackLog = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            trackLog.Transect = transect;
             return trackLog;
         }
 
         internal static TrackLog CloneFrom(TrackLog oldTrackLog)
         {
             if (oldTrackLog == null)
-            {
-                Trace.TraceError("Fail! oldTrackLog is null in TrackLog.CloneFrom()");
-                return null;
-            }
+                throw new ArgumentNullException("oldTrackLog");
 
-            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
+            TrackLog trackLog = CreateWith(oldTrackLog.Transect);
+            trackLog.LoadAttributes(oldTrackLog);
+            return trackLog;
+        }
+
+        private static TrackLog CreateFromFeature(Feature feature)
+        {
             if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to create a new transect is featurelayer");
                 return null;
-            }
-
             feature.Geometry = new Polyline();
-            var newTrackLog = new TrackLog
-                                  {
-                                      Feature = feature,
-                                      Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                      Transect = oldTrackLog.Transect
-                                  };
-
-            newTrackLog.LoadAttributes(oldTrackLog);
-
-            TrackLogs[newTrackLog.Guid] = newTrackLog;
-            return newTrackLog;
+            var trackLog = new TrackLog { Feature = feature };
+            trackLog.LoadAttributes();
+            TrackLogs[trackLog.Guid] = trackLog;
+            return trackLog;
         }
 
         private void LoadAttributes()
         {
+            bool existing = Feature.FeatureDataRow["TrackID"] is Guid;
+
+            if (existing)
+                Guid = (Guid)Feature.FeatureDataRow["TrackID"];
+            else
+                Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+
+            //For new features, TransectID will be null, so we can't load a Transect feature from the database
+            //For new features, We will rely on the caller to set the Transect property 
+            if (existing && Feature.FeatureDataRow["TransectID"] is string)
+                Transect = Transect.FromName((string) Feature.FeatureDataRow["TransectID"]);
+
+            //Simple Attributes
             Vessel = Feature.FeatureDataRow["Vessel"] as string;
             DataRecorder = Feature.FeatureDataRow["Recorder"] as string;
             Observer1 = Feature.FeatureDataRow["Observer1"] as string;
             Observer2 = Feature.FeatureDataRow["Observer2"] as string;
-            Weather = (int)Feature.FeatureDataRow["Weather"];
-            Visibility = (int)Feature.FeatureDataRow["Visibility"];
-            Beaufort = (int)Feature.FeatureDataRow["Beaufort"];
-            StartingTime = (DateTime)Feature.FeatureDataRow["Start"];
-            FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
+            if (Feature.FeatureDataRow["Weather"] is int)
+                Weather = (int)Feature.FeatureDataRow["Weather"];
+            if (Feature.FeatureDataRow["Visibility"] is int)
+                Visibility = (int)Feature.FeatureDataRow["Visibility"];
+            if (Feature.FeatureDataRow["Beaufort"] is int)
+                Beaufort = (int)Feature.FeatureDataRow["Beaufort"];
+            if (Feature.FeatureDataRow["Start"] is DateTime)
+                StartingTime = (DateTime)Feature.FeatureDataRow["Start"];
+            if (Feature.FeatureDataRow["End"] is DateTime)
+                FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
         }
 
         private void LoadAttributes(TrackLog templateTrackLog)
@@ -142,7 +121,7 @@ namespace AnimalObservations
 
         #endregion
 
-        #region update and save
+        #region Update and Save/Delete
 
         internal void AddPoint(Coordinate coordinate)
         {
@@ -181,6 +160,14 @@ namespace AnimalObservations
             Feature.FeatureDataRow["Beaufort"] = Beaufort;
             Feature.FeatureDataRow["Start"] = StartingTime;
         }
+
+        internal void Delete()
+        {
+            TrackLogs.Remove(Guid);
+            Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
+        }
+
+
         #endregion
     }
 }

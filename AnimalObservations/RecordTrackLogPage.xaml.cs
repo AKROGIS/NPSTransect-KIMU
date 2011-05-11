@@ -23,7 +23,7 @@ namespace AnimalObservations
             InitializeComponent();
 
             //Page Captions
-            Title = _trackLog.Transect.Name;
+            Title = "Transect " + _trackLog.Transect.Name;
             Note = "Capturing GPS points in track log";
             // page icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
@@ -75,7 +75,7 @@ namespace AnimalObservations
             Debug.Assert(_task.CurrentGpsPoint != null, "Fail! Current GPS Point is null when recording an observation.");
             if (_task.CurrentGpsPoint == null)
                 return;
-
+            //TODO - add try/catch - CreateWith() may throw exceptions
             Observation observation = Observation.CreateWith(_task.CurrentGpsPoint);
             _task.AddObservation(observation);
             MobileApplication.Current.Transition(new EditObservationAttributesPage());
@@ -99,10 +99,8 @@ namespace AnimalObservations
             System.Windows.Point mouseUpPoint = e.GetPosition(this);
             var drawingPoint = new System.Drawing.Point(Convert.ToInt32(mouseUpPoint.X), Convert.ToInt32(mouseUpPoint.Y));
             
-            //Check to see if there is an birdgroup at this location.  If so edit it, be done
-            Coordinate mapPoint = MobileApplication.Current.Map.ToMap(drawingPoint);
-            var extents = new Envelope(mapPoint, MobileUtilities.SearchRadius * 2, MobileUtilities.SearchRadius * 2);
-            Observation observation = Observation.FromEnvelope(extents);
+            //Check to see if there is an observation related to this location.  If so - edit it, then be done
+            Observation observation = GetObservation(drawingPoint);
             if (observation != null)
             {
                 _task.AddObservation(observation);
@@ -118,8 +116,45 @@ namespace AnimalObservations
             if (dx > 5 || dy > 5)
                 mapControl.Map.Pan(dx, dy);
 
-            //do default behavior
+            //otherwise, do default behavior
             base.OnMouseUp(e);
+        }
+
+        //May return null if no observation is found
+        private static Observation GetObservation(System.Drawing.Point drawingPoint)
+        {
+            Coordinate mapPoint = MobileApplication.Current.Map.ToMap(drawingPoint);
+            var extents = new Envelope(mapPoint, MobileUtilities.SearchRadius * 2, MobileUtilities.SearchRadius * 2);
+            Observation observation = null;
+            try
+            {
+                //Try and find a bird group in this extent
+                BirdGroup birdGroup = null;
+                try
+                {
+                    birdGroup = BirdGroup.FromEnvelope(extents);
+                }
+                //TODO - be more descriminating on exceptions, and re-throw where appropriate.
+                catch (Exception ex)
+                {
+                    Trace.TraceError("Caught and ignored exception {0}", ex.Message);
+                    //Allow birdGroup to default to null, i.e. no birdGroup found in extents
+                }
+                if (birdGroup != null)
+                    observation =  birdGroup.Observation;
+
+                //We did not find a birdgroup, so try and find an observation in this extent
+                //Check to see if it is in our cache, if not, then load from database
+                if (observation == null)
+                    observation = Observation.FromEnvelope(extents);
+            }
+            //TODO - be more descriminating on exceptions, and provide error message where appropriate.
+            catch (Exception ex)
+            {
+                Trace.TraceError("Caught and ignored exception {0}", ex.Message);
+                //Allow observation to default to null, i.e. no observation found in extents
+            }
+            return observation;
         }
 
         #endregion

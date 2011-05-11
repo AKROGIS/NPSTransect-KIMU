@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 
 namespace AnimalObservations
 {
@@ -20,6 +19,8 @@ namespace AnimalObservations
 
     public class BirdGroup2
     {
+        //TODO - merge with BirdGroup (?? need a default constructor for Datagrid WPF/XAML interface)
+
         //public properties for WPF/XAML interface binding
         public int GroupSize { get; set; }
         public BirdGroupBehavior Behavior { get; set; }
@@ -27,6 +28,53 @@ namespace AnimalObservations
         public string Comment { get; set; }
 
         private BirdGroup DbLink { get; set; }
+
+        #region Constructors
+
+        public BirdGroup2()
+        {
+        }
+
+        internal BirdGroup2(BirdGroup birdGroup)
+        {
+            GroupSize = birdGroup.Size;
+            switch (birdGroup.Species)
+            {
+                case 'M':
+                case 'm':
+                    Species = BirdGroupSpecies.Marbled;
+                    break;
+                case 'K':
+                case 'k':
+                    Species = BirdGroupSpecies.Kitlitz;
+                    break;
+                case 'U':
+                case 'u':
+                    Species = BirdGroupSpecies.Unidentified;
+                    break;
+                default:
+                    Species = BirdGroupSpecies.Pending;
+                    break;
+            }
+            switch (birdGroup.Behavior)
+            {
+                case 'W':
+                case 'w':
+                    Behavior = BirdGroupBehavior.Water;
+                    break;
+                case 'F':
+                case 'f':
+                    Behavior = BirdGroupBehavior.Flying;
+                    break;
+                default:
+                    Species = BirdGroupSpecies.Pending;
+                    break;
+            }
+            Comment = birdGroup.Comments;
+            DbLink = birdGroup;
+        }
+
+        #endregion
 
         public void Delete()
         {
@@ -38,9 +86,6 @@ namespace AnimalObservations
         {
             if (DbLink == null)
                 DbLink = BirdGroup.CreateWith(observation);
-            Debug.Assert(DbLink != null, "Failed to create new birdgroup!");
-            if (DbLink == null)
-                return false;
             DbLink.Size = GroupSize;
             DbLink.Behavior = Behavior.ToString()[0];
             DbLink.Species = Species.ToString()[0];
@@ -48,7 +93,7 @@ namespace AnimalObservations
             return DbLink.Save();
         }
 
-        public bool IsValid
+        internal bool IsValid
         {
             get
             {
@@ -58,7 +103,7 @@ namespace AnimalObservations
             }
         }
 
-        public bool IsComplete
+        internal bool IsComplete
         {
             get
             {
@@ -140,5 +185,6 @@ namespace AnimalObservations
         }
 
         private bool _previousCharacterWasDigit;
+
     }
 }

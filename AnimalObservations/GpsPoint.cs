@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
@@ -10,23 +9,23 @@ namespace AnimalObservations
 {
     public class GpsPoint
     {
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GPS Points");
+        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GpsPoints");
         private static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
 
-        public Feature Feature { get; private set; }
-        public Guid Guid { get; private set; }
+        private Feature Feature { get; set; }
+        internal Guid Guid { get; private set; }
 
-        public TrackLog TrackLog { get; private set; }
-        public double Latitude { get; private set; }
-        public double Longitude { get; private set; }
-        public Coordinate Location { get; private set; }
-        public DateTime GpsTime { get; private set; }
-        public DateTime LocalTime { get; private set; }
-        public double Hdop { get; private set; }
-        public int SatelliteFixCount { get; private set; }
-        public GpsFixStatus SatelliteFixStatus { get; private set; }
-        public double Speed { get; private set; }
-        public double Bearing { get; private set; }
+        internal TrackLog TrackLog { get; private set; }
+        internal double Latitude { get; private set; }
+        internal double Longitude { get; private set; }
+        internal Coordinate Location { get; private set; }
+        internal DateTime GpsTime { get; private set; }
+        internal DateTime LocalTime { get; private set; }
+        internal double Hdop { get; private set; }
+        internal int SatelliteFixCount { get; private set; }
+        internal GpsFixStatus SatelliteFixStatus { get; private set; }
+        internal double Speed { get; private set; }
+        internal double Bearing { get; private set; }
 
 
         #region constructors
@@ -34,25 +33,20 @@ namespace AnimalObservations
         private  GpsPoint()
         {}
 
-        public static GpsPoint FromGuid(Guid guid)
+        //May return null if no feature is found with matching guid
+        internal static GpsPoint FromGuid(Guid guid)
         {
             if (GpsPoints.ContainsKey(guid))
                 return GpsPoints[guid];
 
-            var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
-            if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to get feature with id = {0} from {1}", guid, FeatureLayer.Name);
-                return null;
-            }
-
-            var gpsPoint = new GpsPoint { Feature = feature };
-            gpsPoint.LoadAttributes();
-            GpsPoints[gpsPoint.Guid] = gpsPoint;
+            string whereClause = string.Format("GpsPointID = {0}", guid);
+            GpsPoint gpsPoint = CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+            if (gpsPoint != null && gpsPoint.TrackLog == null)
+                throw new ApplicationException("Existing gps point has no track log");
             return gpsPoint;
         }
 
-        public static GpsPoint CreateWith(TrackLog trackLog, GpsConnection gpsConnection)
+        internal static GpsPoint CreateWith(TrackLog trackLog, GpsConnection gpsConnection)
         {
             if (trackLog == null)
                 throw new ArgumentNullException("trackLog");
@@ -61,53 +55,76 @@ namespace AnimalObservations
             if (!gpsConnection.IsOpen)
                 throw new InvalidOperationException("GPS connection is closed");
 
-            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to create a new feature in {0}", FeatureLayer.Name);
-                return null;
-            }
-
-            var gpsPoint = new GpsPoint
-                               {
-                                   Feature = feature,
-                                   Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                   TrackLog = trackLog
-                               };
-
+            //May throw an exception, but should never return null
+            var gpsPoint = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            gpsPoint.TrackLog = trackLog;
             gpsPoint.LoadAttributes(gpsConnection);
+            return gpsPoint;
+        }
+
+        //ONLY USE FOR TESTING THE DB SCHEMA!  RESULTING OBJECT WILL NOT HAVE VALID PROPERTY VALUES!
+        internal static GpsPoint CreateWith(TrackLog trackLog)
+        {
+            if (trackLog == null)
+                throw new ArgumentNullException("trackLog");
+
+            //May throw an exception, but should never return null
+            var gpsPoint = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            gpsPoint.TrackLog = trackLog;
+            return gpsPoint;
+        }
+
+        private static GpsPoint CreateFromFeature(Feature feature)
+        {
+            if (feature == null)
+                return null;
+            var gpsPoint = new GpsPoint { Feature = feature };
+            gpsPoint.LoadAttributes();
             GpsPoints[gpsPoint.Guid] = gpsPoint;
-            gpsPoint.Save();
             return gpsPoint;
         }
 
         private void LoadAttributes()
         {
-            Guid = (Guid)Feature.FeatureDataRow["GpsPointID"];
-            TrackLog = TrackLog.FromGuid((Guid)Feature.FeatureDataRow["TrackID"]);
-            Latitude = (double)Feature.FeatureDataRow["Lat_dd"];
-            Longitude = (double)Feature.FeatureDataRow["Long_dd"];
-            GpsTime = (DateTime)Feature.FeatureDataRow["Time_utc"];
-            LocalTime = (DateTime)Feature.FeatureDataRow["Time_local"];
-            Hdop = (double)Feature.FeatureDataRow["HDOP"];
-            SatelliteFixCount = (int)Feature.FeatureDataRow["Satellite_count"];
-            SatelliteFixStatus = (GpsFixStatus)Feature.FeatureDataRow["GPS_Fix_Status"];
-            Speed = (double)Feature.FeatureDataRow["Speed"];
-            Bearing = (double)Feature.FeatureDataRow["Bearing"];
+            bool existing = Feature.FeatureDataRow["GpsPointID"] is Guid;
+
+            if (existing)
+                Guid = (Guid)Feature.FeatureDataRow["GpsPointID"];
+            else
+                Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+
+            //For new features, TrackID will be null, so we can't load a TrackLog feature from the database
+            //For new features, We will rely on the caller to set the TrackLog property 
+            if (existing && Feature.FeatureDataRow["TrackID"] is Guid)
+                TrackLog = TrackLog.FromGuid((Guid)Feature.FeatureDataRow["TrackID"]);
+
+            //Simple Attributes
+            if (Feature.FeatureDataRow["Lat_dd"] is double)
+                Latitude = (double)Feature.FeatureDataRow["Lat_dd"];
+            if (Feature.FeatureDataRow["Lat_dd"] is double)
+                Longitude = (double)Feature.FeatureDataRow["Long_dd"];
+            if (Feature.FeatureDataRow["Time_utc"] is DateTime)
+                GpsTime = (DateTime)Feature.FeatureDataRow["Time_utc"];
+            if (Feature.FeatureDataRow["Time_utc"] is DateTime)
+                LocalTime = (DateTime)Feature.FeatureDataRow["Time_local"];
+            if (Feature.FeatureDataRow["HDOP"] is double)
+                Hdop = (double)Feature.FeatureDataRow["HDOP"];
+            if (Feature.FeatureDataRow["Satellite_count"] is int)
+                SatelliteFixCount = (int)Feature.FeatureDataRow["Satellite_count"];
+            if (Feature.FeatureDataRow["GPS_Fix_Status"] is int)
+                SatelliteFixStatus = (GpsFixStatus)Feature.FeatureDataRow["GPS_Fix_Status"];
+            if (Feature.FeatureDataRow["Speed"] is double)
+                Speed = (double)Feature.FeatureDataRow["Speed"];
+            if (Feature.FeatureDataRow["Bearing"] is double)
+                Bearing = (double)Feature.FeatureDataRow["Bearing"];
 
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
         }
 
         private void LoadAttributes(GpsConnection gpsConnection)
         {
-                Latitude = gpsConnection.Latitude;
-                Longitude = gpsConnection.Longitude;
-                //Offset Regan's office to GLBA main dock
-                Latitude -= 2.7618;
-                Longitude += 13.9988;
-                Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
-
-            //Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
+            Latitude = gpsConnection.Latitude;
+            Longitude = gpsConnection.Longitude;
             GpsTime = gpsConnection.DateTime;
             LocalTime = GpsTime.ToLocalTime();
             Hdop = gpsConnection.HorizontalDilutionOfPrecision;
@@ -115,13 +132,20 @@ namespace AnimalObservations
             SatelliteFixStatus = gpsConnection.FixStatus;
             Speed = gpsConnection.Speed;
             Bearing = gpsConnection.Course;
+
+            //Offset Regan's office to GLBA main dock
+            Latitude -= 2.7618;
+            Longitude += 13.9988;
+            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
+
+            //Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
         }
 
         #endregion
 
-        #region update and save
+        #region Save/Delete
 
-        public void Save()
+        internal void Save()
         {
             Feature.Geometry = new Point(Location);
             Feature.FeatureDataRow["GpsPointID"] = Guid;
@@ -137,6 +161,13 @@ namespace AnimalObservations
             Feature.FeatureDataRow["Bearing"] = Bearing;
             Feature.SaveEdits();
         }
+
+        internal void Delete()
+        {
+            GpsPoints.Remove(Guid);
+            Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
+        }
+
 
         #endregion
     }

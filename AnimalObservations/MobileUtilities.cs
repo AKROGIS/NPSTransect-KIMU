@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
+using System.Linq;
 using ESRI.ArcGIS.Mobile;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
@@ -14,11 +16,10 @@ namespace AnimalObservations
 
         internal static FeatureLayer GetFeatureLayer(string featureLayerName)
         {
-            foreach (FeatureLayerInfo fli in MobileApplication.Current.Project.EnumerateFeatureLayerInfos())
-                if (fli.Name == featureLayerName)
-                    return fli.FeatureLayer;
-            //FIXME - Provide a message box then quit.  This is called by multiple class constructors 
-            throw new InvalidOperationException("Feature layer featureLayerName not found: " + featureLayerName);
+             foreach (var layer in MobileApplication.Current.Project.EnumerateFeatureLayers())
+                if (layer.ServerFeatureClassName == featureLayerName)
+                    return layer;
+            throw new InvalidOperationException("Feature data set '" + featureLayerName + "' not found." );
         }
 
         #region Create New Features
@@ -40,37 +41,42 @@ namespace AnimalObservations
 
         #region Get existing Features
 
-        internal static Feature GetFeature(FeatureLayer featureLayer, Guid guid)
-        {
-            string whereClause = string.Format("{0} = {1}", featureLayer.GlobalIdColumnName, guid);
-            return GetFeature(featureLayer, whereClause);
-        }
-
-
+        //FIXME - Feature must be in an edit state to get the row.
+        //TODO - check to see what happens if we create a Feature from a feature data row already open for editing
 
         internal static Feature GetFeature(FeatureLayer featureLayer, string whereClause)
         {
-            throw new NotImplementedException();
-            //var query = new QueryFilter(whereClause);
-            //FeatureDataReader data = featureLayer.GetDataReader(query);
-            //FeatureDataTable table = featureLayer.GetDataTable(query);
-            //if (table.Rows.Count < 1)
-            //    return null;
-            //if (table.Rows.Count > 1)
-            //    //Ambiguous results, best to not return anything.
-            //    return null;
-            //return new Feature(table[0]);
+            return GetFeatures(featureLayer, whereClause).FirstOrDefault();
         }
 
         internal static Feature GetFeature(FeatureLayer featureLayer, Envelope extents)
         {
-            var query = new QueryFilter(extents, GeometricRelationshipType.Within);
+            return GetFeatures(featureLayer, extents).FirstOrDefault();
+        }
+
+        internal static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, string whereClause)
+        {
+            var query = new QueryFilter(whereClause);
+            return GetFeatures(featureLayer, query);
+        }
+
+        internal static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, Envelope extents)
+        {
+            var query = new QueryFilter(extents, GeometricRelationshipType.Contain);
+            return GetFeatures(featureLayer, query);
+        }
+
+        private static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, QueryFilter query)
+        {
+            Trace.TraceInformation("feature layer {0}; query {1}", featureLayer, query);
             FeatureDataTable table = featureLayer.GetDataTable(query);
-            if (table.Rows.Count < 1)
-                return null;
-            //If more than one record is returned, ignore all but the first.
-            //user will need to zoom in to make search more selective.
-            return new Feature(table[0]);
+            return from FeatureDataRow row in table.Rows select new Feature(row);
+            //return table.Rows.Cast<FeatureDataRow>().Select(row =>
+            //{
+            //    var f = new Feature(row);
+            //    f.StartEditing();
+            //    return f;
+            //});
         }
 
         #endregion

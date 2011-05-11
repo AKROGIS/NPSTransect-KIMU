@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
@@ -30,44 +29,17 @@ namespace AnimalObservations
             BirdGroups = new ObservableCollection<BirdGroup2>();
         }
 
-        //FIXME restructure the FromGuid() family of initializers.  Need to pass a query to MobileUtilities.GetFeature
-        //since the where clause will differ by featurelayer.
-        //See BirdGroup for a recommended refactoring.
-
+        //May return null if no feature is found with matching guid
         internal static Observation FromGuid(Guid guid)
         {
             if (Observations.ContainsKey(guid))
                 return Observations[guid];
 
-            var feature = MobileUtilities.GetFeature(FeatureLayer, guid);
-            if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to get feature with id = {0} from {1}", guid, FeatureLayer.Name);
-                return null;
-            }
-
-            var observation = new Observation { Feature = feature };
-
-            observation.LoadAttributes1();
-            observation.LoadAttributes2();
-            //FIXME - load related birdgroups 
-            Observations[observation.Guid] = observation;
+            string whereClause = string.Format("ObservationID = {0}", guid);
+            Observation observation = CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+            if (observation != null && observation.GpsPoint == null)
+                throw new ApplicationException("Existing observation has no gps point");
             return observation;
-        }
-
-        internal static Observation FromEnvelope(Envelope extents)
-        {
-            if (extents == null)
-            {
-                Trace.TraceError("Fail! null search point in Observation.FromPoint()");
-                return null;                
-            }
-
-            //FIXME - this only searches the previously loaded/created birdgroups/observations
-            BirdGroup birdGroup = BirdGroup.FromEnvelope(extents);
-            if (birdGroup != null)
-                return birdGroup.Observation;
-            return Observations.Values.FirstOrDefault(observation => observation.Feature.FeatureDataRow.Geometry.Within(extents));
         }
 
         internal static Observation CreateWith(GpsPoint gpsPoint)
@@ -75,36 +47,53 @@ namespace AnimalObservations
             if (gpsPoint == null)
                 throw new ArgumentNullException("gpsPoint");
 
-            var feature = MobileUtilities.CreateNewFeature(FeatureLayer);
-            if (feature == null)
-            {
-                Trace.TraceError("Fail! Unable to create a new feature in {0}", FeatureLayer.Name);
-                return null;
-            }
-
-            var observation = new Observation
-                                  {
-                                      Feature = feature,
-                                      Guid = new Guid(feature.FeatureDataRow.GlobalId.ToByteArray()),
-                                      GpsPoint = gpsPoint
-                                  };
-            //get default attributes
-            observation.LoadAttributes2();
-            Observations[gpsPoint.Guid] = observation;
-            //write the Geometry and default attributes to the database
-            //observation.Save();
+            //May throw an exception, but should never return null
+            var observation = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            observation.GpsPoint = gpsPoint;
             return observation;
         }
 
-        private void LoadAttributes1()
+        //May return null if no feature is found within extents
+        internal static Observation FromEnvelope(Envelope extents)
         {
-            //Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
-            Guid = (Guid)Feature.FeatureDataRow["ObservationID"];
-            GpsPoint = GpsPoint.FromGuid((Guid)Feature.FeatureDataRow["GPSPointID"]);
+            if (extents == null)
+                throw new ArgumentNullException("extents");
+
+            Observation observation = Observations.Values.FirstOrDefault(obs => obs.Feature.FeatureDataRow.Geometry.Within(extents)) ??
+                                      CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+            return observation;
         }
 
-        private void LoadAttributes2()
+        private static Observation CreateFromFeature(Feature feature)
         {
+            if (feature == null)
+                return null;
+            var observation = new Observation { Feature = feature };
+            observation.LoadAttributes();
+            Observations[observation.Guid] = observation;
+            return observation;
+        }
+
+        private void LoadAttributes()
+        {
+            bool existing = Feature.FeatureDataRow["ObservationID"] is Guid;
+
+            if (existing)
+                Guid = (Guid)Feature.FeatureDataRow["ObservationID"];
+            else
+                Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
+
+            //For new features, GPSPointID will be null, so we can't load an GPSPointID feature from the database
+            //For new features, We will rely on the caller to set the GpsPoint property 
+            if (existing && Feature.FeatureDataRow["GPSPointID"] is Guid)
+                GpsPoint = GpsPoint.FromGuid((Guid) Feature.FeatureDataRow["GPSPointID"]);
+
+            //Load bird groups
+            if (existing)
+                foreach (var birdGroup in BirdGroup.AllWithObservation(this))
+                    BirdGroups.Add(new BirdGroup2(birdGroup));
+
+            //Simple Attributes
             if (Feature.FeatureDataRow["Angle"] is int)
                 Angle = (int)Feature.FeatureDataRow["Angle"];
             if (Feature.FeatureDataRow["Distance"] is int)
@@ -133,6 +122,15 @@ namespace AnimalObservations
                     failed = true;
             return !failed;
         }
+
+        internal void Delete()
+        {
+            Observations.Remove(Guid);
+            Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
+            foreach (BirdGroup2 bird in BirdGroups)
+                bird.Delete();
+        }
+
 
         #endregion
     }

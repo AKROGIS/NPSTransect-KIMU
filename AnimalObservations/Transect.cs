@@ -36,9 +36,14 @@ namespace AnimalObservations
                         transect.LoadAttributes(data);
                         Transects[transect.Name] = transect;
                     }
+                    catch (ArgumentException)
+                    {
+                        //Most likely a database schema error, rethrow, so UI can alert user.
+                        throw; 
+                    }
                     catch (Exception ex)
                     {
-                        Trace.TraceError("Read a bad transect. Error Message: {0}" + ex.Message);
+                        Trace.TraceError("Read a bad transect. Error Message: {0}", ex.Message);
                     }
                 }
             }
@@ -47,7 +52,10 @@ namespace AnimalObservations
         private void LoadAttributes(FeatureDataReader data)
         {
             Shape = data.GetGeometry();
-            Name = data.GetString(data.GetOrdinal("TransectID"));
+            const string idColumnName = "TransectID";
+            if (data.GetOrdinal(idColumnName) < 0)
+                throw new ArgumentException(string.Format("Column '{0}' does not belong to table {1}",idColumnName, FeatureLayer.Name));
+            Name = data[idColumnName] as string;
         }
 
         #endregion

@@ -141,7 +141,7 @@ namespace AnimalObservations
             //Save and close the current observation attribute page
             //Transition to next in list, or if empty, previous page
 
-            //FIXME - add try/catch, or ensure no exceptions can be thrown during save
+            //FIXME - add try/catch - database schema changes, etc.
             //FIXME provide options to user on how to proceed if save failed
             if (!Task.ActiveObservation.Save())
             {
@@ -156,6 +156,7 @@ namespace AnimalObservations
         {
             //Log observation point and add observation attribute page to the queue, do not change pages
 
+            //TODO - add try/catch - CreateWith() may throw exceptions
             Task.AddObservation(Observation.CreateWith(Task.CurrentGpsPoint));
         }
 

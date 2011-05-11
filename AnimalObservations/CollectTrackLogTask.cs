@@ -31,15 +31,20 @@ namespace AnimalObservations
 
         protected override void OnOwnerInitialized()
         {
+            ValidateDatabaseSchema();
+            if (DatabaseSchemaIsInvalid)
+                return;
             InitializeObservationQueue();
             InitializeGpsConnection();
-
             SetupBoatLayer();
         }
 
         public override void Execute()
         {
             //Tasks can always be executed - no override for CanExecute() - so check valididty here.
+            if (DatabaseSchemaIsInvalid)
+                return;
+
             var mapExtents = MobileApplication.Current.Map.GetExtent();
             if (mapExtents == null)
             {
@@ -250,6 +255,7 @@ namespace AnimalObservations
         void PostChanges()
         {
             //ignore save errors here (there should be none), we will check/report when the tracklog is finalized.
+            //TODO - add try/catch; various exceptions may be thrown.
             CurrentTrackLog.Save();
             foreach (var observation in OpenObservations)
             {
@@ -269,7 +275,9 @@ namespace AnimalObservations
             {
                 if (_isRecording)
                 {
+                    //TODO - Add try/catch - CreateWith() and Save() may throw exceptions
                     CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, _gpsConnection);
+                    CurrentGpsPoint.Save();
                     CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
                     MostRecentLocation = CurrentGpsPoint.Location;
                 }
@@ -348,6 +356,78 @@ namespace AnimalObservations
             _boat.Margin = new System.Windows.Thickness(point.X, point.Y, 0, 0);
             //TODO - pan map to center boat location
             //MobileApplication.Current.Map.CenterAt(location);
+        }
+
+        #endregion
+
+        #region Test database Schema
+
+        private bool ValidateDatabaseSchema()
+        {
+            return DatabaseSchemaIsInvalid;
+        }
+
+        private bool DatabaseSchemaIsInvalid
+        {
+            get
+            {
+                if (!_validDb.HasValue)
+                    _validDb = !TestDatabaseSchema();
+                return _validDb.Value;
+            }
+        }
+        private bool? _validDb;
+
+        private static bool TestDatabaseSchema()
+        {
+            const string errorMsg = "The structure of the database has been\n" +
+                                    "modified. Field work cannot proceed\n" +
+                                    "until the database is restored to\n" +
+                                    "normal, or the application is updated.\n" +
+                                    "Details:\n";
+
+            try
+            {
+                //Initializes the transect Class
+                Transect transect = Transect.AllTransects.FirstOrDefault();
+                if (transect == null)
+                {
+                    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                        "Field work cannot proceed until\n" +
+                        "transects are downloaded to the\n" +
+                        "mobile cache.",
+                        "No Transects Found",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    return false;
+                }
+                //Initialize other classes
+                TrackLog trackLog = TrackLog.CreateWith(transect);
+                GpsPoint gpsPoint = GpsPoint.CreateWith(trackLog);
+                Observation observation = Observation.CreateWith(gpsPoint);
+                BirdGroup birdGroup = BirdGroup.CreateWith(observation);
+                //Unwind - destroy the temporary objects
+                birdGroup.Delete();
+                observation.Delete();
+                gpsPoint.Delete();
+                trackLog.Delete();
+                return true;
+            }
+            catch (TypeInitializationException ex)
+            {
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                    errorMsg + ex.InnerException.Message,
+                    "Invalid Database",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                    errorMsg + ex.Message,
+                    "Invalid Database",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return false;
+            }
         }
 
         #endregion
