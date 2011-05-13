@@ -109,7 +109,7 @@ namespace AnimalObservations
             {
                 return Behavior != BirdGroupBehavior.Pending &&
                        Species != BirdGroupSpecies.Pending &&
-                       (GroupSize > 9 || GroupSize > 0 && !_previousCharacterWasDigit);
+                       (9 < GroupSize || (0 < GroupSize && !_previousCharacterWasDigit));
             }
         }
 
@@ -123,65 +123,86 @@ namespace AnimalObservations
             _previousCharacterWasDigit = default(bool);
         }
 
-        public bool AcceptKey(char character)
+        internal static bool RecognizeKey(char character)
         {
-            if (!Char.IsLetterOrDigit(character))
-            {
-                _previousCharacterWasDigit = false;
-                return false;
-            }
+            return "0123456789WwFfMmKkUu".Contains(character.ToString());
+        }
 
+        internal bool AcceptKey(char character)
+        {
+            if (!RecognizeKey(character))
+                goto invalidNonDigit;
+
+            //Digits
             if (Char.IsDigit(character))
             {
-                if (GroupSize > 0 && !_previousCharacterWasDigit)
-                {
-                    //Digit-nondigit-digit sequence is invalid for a single bird.
-                    _previousCharacterWasDigit = true;
-                    return false;
-                }
-                _previousCharacterWasDigit = true;
-                if (GroupSize > 9)
-                    return false;
                 int digit = int.Parse(character.ToString());
+
+                //reject leading zeros
+                if (digit == 0 && !_previousCharacterWasDigit)
+                    goto invalidDigit;
+
+                //reject digit-nondigit-digit sequence
+                if (GroupSize > 0 && !_previousCharacterWasDigit)
+                    goto invalidDigit;
+
+                //reject third digit
+                if (GroupSize > 9)
+                    goto invalidDigit;
+
+                //accept all other digits
                 GroupSize = GroupSize * 10 + digit;
-                return true;
+                goto validDigit;
             }
-            _previousCharacterWasDigit = false;
+
+            //Recognized Non-digits
             switch (character)
             {
                 case 'W':
                 case 'w':
                     if (Behavior != BirdGroupBehavior.Pending)
-                        return false;
+                        goto invalidNonDigit;
                     Behavior = BirdGroupBehavior.Water;
-                    return true;
+                    goto validNonDigit;
                 case 'F':
                 case 'f':
                     if (Behavior != BirdGroupBehavior.Pending)
-                        return false;
+                        goto invalidNonDigit;
                     Behavior = BirdGroupBehavior.Flying;
-                    return true;
+                    goto validNonDigit;
                 case 'M':
                 case 'm':
                     if (Species != BirdGroupSpecies.Pending)
-                        return false;
+                        goto invalidNonDigit;
                     Species = BirdGroupSpecies.Marbled;
-                    return true;
+                    goto validNonDigit;
                 case 'K':
                 case 'k':
                     if (Species != BirdGroupSpecies.Pending)
-                        return false;
+                        goto invalidNonDigit;
                     Species = BirdGroupSpecies.Kitlitz;
-                    return true;
+                    goto validNonDigit;
                 case 'U':
                 case 'u':
                     if (Species != BirdGroupSpecies.Pending)
-                        return false;
+                        goto invalidNonDigit;
                     Species = BirdGroupSpecies.Unidentified;
-                    return true;
+                    goto validNonDigit;
                 default:
-                    return false;
+                    goto invalidNonDigit;
             }
+            invalidDigit:
+                _previousCharacterWasDigit = true;
+                return false;
+            validDigit:
+                _previousCharacterWasDigit = true;
+                return true;
+            invalidNonDigit:
+                _previousCharacterWasDigit = false;
+                return false;
+            validNonDigit:
+                _previousCharacterWasDigit = false;
+                return true;
         }
 
         private bool _previousCharacterWasDigit;

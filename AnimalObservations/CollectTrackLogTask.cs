@@ -17,7 +17,11 @@ namespace AnimalObservations
         {
             Name = "Collect Observations";  
             Description = "Begin data logging along a transect";
-            //Can't set the ImageSource property because of threading issues.  Use GetImageSource() override
+            //Can't set the ImageSource (task icon) property because of threading issues.  Use GetImageSource() override
+
+            NearbyTransects = new ObservableCollection<Transect>();
+
+            MobileApplication.Current.ProjectClosing += (s, e) => StopRecording();
         }
 
 
@@ -53,24 +57,52 @@ namespace AnimalObservations
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
-            if (Transect.GetWithin(mapExtents).Count() < 1)
+            RefreshNearbyTransects();
+            if (NearbyTransects.Count < 1)
             {
                 ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
-                    "No transects could be found within the visible map.\n" +
-                    "Either zoom out or wait until a transect comes into view.\n" + 
+                    "No transects could be found within the visible map. " +
+                    "Either zoom out or wait until a transect comes into view. " + 
                     "Make sure the GPS is on and the map is tracking your location.", "No Transects Found",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
-            if (!_gpsConnection.IsOpen || MostRecentLocation == null)
-            {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
-                    "GPS is disconnected or doesn't yet have a fix on the satellites.\n" + 
-                    "Correct the problems with the GPS and try again.", "No GPS Fix",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                return;
-            }
+            //FIXME uncomment for production code - testing workaround
+            //if (!_gpsConnection.IsOpen || MostRecentLocation == null)
+            //{
+            //    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+            //        "GPS is disconnected or doesn't yet have a fix on the satellites. " + 
+            //        "Correct the problems with the GPS and try again.", "No GPS Fix",
+            //        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            //    return;
+            //}
+            //End of testing hack
             MobileApplication.Current.Transition(new SetupTrackLogPage());
+        }
+
+        #endregion
+
+
+        #region Manage Transects
+
+        //Use a public Observable Collection for XAML Binding
+        public ObservableCollection<Transect> NearbyTransects { get; private set; }
+
+        //The list starts out empty, and we cannot begin observations if there are no nearby transects.
+
+        internal void RefreshNearbyTransects()
+        {
+            Envelope mapExtents = MobileApplication.Current.Map.GetExtent();
+            bool transectsAreNearby = (Transect.GetWithin(mapExtents).FirstOrDefault() != null);
+            //Leave the list unchanged if there are no nearby transects.
+            //We don't want the pick list to go blank if we are changing tracklog properties in the
+            //middle of a transect, but we happen to be zoomed in and can't see the transect.
+            if (transectsAreNearby)
+            {
+                NearbyTransects.Clear();
+                foreach (var transect in Transect.GetWithin(mapExtents))
+                    NearbyTransects.Add(transect);
+            }
         }
 
         #endregion
@@ -87,6 +119,13 @@ namespace AnimalObservations
 
         public bool StartRecording()
         {
+            //FIXME - Remove for production
+            CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
+            MostRecentLocation = new Coordinate(448262, 6479766);
+            _isRecording = true;
+            return _isRecording;
+            //End of testing hack
+
             if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
             {
                 _isRecording = false;
@@ -94,9 +133,8 @@ namespace AnimalObservations
             else
             {
                 _isRecording = true;
-                //FIXME - the following seems to cause a conflicting event.  Removed for now
-
                 //Collect our first point now, don't wait for an event. 
+                //FIXME - the following seems to cause a conflicting event.  Removed for now
                 //Connection_GpsChanged(null, null);
             }
             return _isRecording;
@@ -104,6 +142,11 @@ namespace AnimalObservations
 
         public void StopRecording()
         {
+            if (!PostChanges())
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving changes", "Save Failed");
+            while (ActiveObservation != null)
+                OpenObservations.Remove(ActiveObservation);
+
             //Make sure the GPS event isn't using the CurrentTrackLog 
             lock (_tracklogLock)
             {
@@ -111,9 +154,29 @@ namespace AnimalObservations
                 DefaultTrackLog = CurrentTrackLog;
                 CurrentTrackLog = null;
             }
+
         }
 
+        bool PostChanges()
+        {
+            bool saved;
+            try
+            {
+                saved = CurrentTrackLog.Save();
+                foreach (var observation in OpenObservations)
+                    saved = saved && observation.Save();
+            }
+            catch (Exception)
+            {
+                //TODO - post the exception to an error log file
+                saved = false;
+            }
+            return saved;
+        }
+
+
         public TrackLog DefaultTrackLog { get; set; }
+
         //Use INotifyPropertyChanged to keep UI linked
         public TrackLog CurrentTrackLog
         {
@@ -152,6 +215,12 @@ namespace AnimalObservations
         }
         private Observation _activeObservation;
 
+        public System.Windows.Visibility ObservationQueueVisibility
+        {
+            get {
+                return OpenObservations.Count > 1 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            }
+        }
 
         private void InitializeObservationQueue()
         {
@@ -247,21 +316,10 @@ namespace AnimalObservations
             //FIXME - Close any open pages???
             if (_isRecording)
             {
-                PostChanges();
                 StopRecording();
             }
         }
 
-        void PostChanges()
-        {
-            //ignore save errors here (there should be none), we will check/report when the tracklog is finalized.
-            //TODO - add try/catch; various exceptions may be thrown.
-            CurrentTrackLog.Save();
-            foreach (var observation in OpenObservations)
-            {
-                observation.Save();
-            }
-        }
         void ProcessGpsChangedEventFromConnection(object sender, EventArgs e)
         {
             if (_gpsConnection.FixStatus == GpsFixStatus.Invalid)
@@ -362,9 +420,10 @@ namespace AnimalObservations
 
         #region Test database Schema
 
-        private bool ValidateDatabaseSchema()
+        private void ValidateDatabaseSchema()
         {
-            return DatabaseSchemaIsInvalid;
+            _validDb = !TestDatabaseSchema();
+            return;
         }
 
         private bool DatabaseSchemaIsInvalid
@@ -385,7 +444,6 @@ namespace AnimalObservations
                                     "until the database is restored to\n" +
                                     "normal, or the application is updated.\n" +
                                     "Details:\n";
-
             try
             {
                 //Initializes the transect Class

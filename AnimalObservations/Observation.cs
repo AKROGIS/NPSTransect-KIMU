@@ -1,4 +1,5 @@
 ﻿using System;
+//using System.Windows.Data;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,12 +22,14 @@ namespace AnimalObservations
         public int Angle { get; set; }
         public int Distance { get; set; }
         public ObservableCollection<BirdGroup2> BirdGroups { get; private set; }
+        //public ListCollectionView BirdGroups2 { get; private set; }
 
         #region Constructors
 
         private Observation()
         {
             BirdGroups = new ObservableCollection<BirdGroup2>();
+            //BirdGroups2 = new ListCollectionView(BirdGroups);
         }
 
         //May return null if no feature is found with matching guid

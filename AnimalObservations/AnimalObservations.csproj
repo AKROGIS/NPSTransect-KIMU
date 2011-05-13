@@ -79,6 +79,7 @@
     <Compile Include="Azimuth.cs" />
     <Compile Include="BirdGroup.cs" />
     <Compile Include="BirdGroup2.cs" />
+    <Compile Include="CountToVisibilityConverter.cs" />
     <Compile Include="EditObservationAttributesPage.xaml.cs">
       <DependentUpon>EditObservationAttributesPage.xaml</DependentUpon>
     </Compile>

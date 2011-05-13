@@ -164,6 +164,11 @@ namespace AnimalObservations
         internal void Delete()
         {
             TrackLogs.Remove(Guid);
+            DeleteFeature();
+        }
+
+        internal void DeleteFeature()
+        {
             Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
         }
 

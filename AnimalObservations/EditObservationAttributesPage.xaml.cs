@@ -83,44 +83,89 @@ namespace AnimalObservations
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            //FIXME - Capture Tabs and don't let the user tab out of the content area.
             if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                if (Task.ActiveObservation.Angle < 0 || Task.ActiveObservation.Angle > 360)
+                {
+                    Keyboard.Focus(angleTextBox);
+                    return;
+                }
+                if (Task.ActiveObservation.Distance < 1 || Task.ActiveObservation.Distance > 500)
+                {
+                    Keyboard.Focus(distanceTextBox);
+                    return;
+                }
+                if (Task.ActiveObservation.BirdGroups.Count < 1 )
+                {
+                    Keyboard.Focus(dataGrid);
+                    return;
+                }
                 OnOkCommandExecute();
+                return;
+            }
             if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
                 OnBackCommandExecute();
-            if (e.Key != Key.Escape && e.Key != Key.Enter)
-            {
-                base.OnKeyDown(e);
+                return;
             }
-            //See if this key helps define a bird group
-            string keyString = (new KeyConverter()).ConvertToString(e.Key);
-            if (!string.IsNullOrEmpty(keyString))
+            if (e.Key == Key.Space)
             {
-                Char keyChar = keyString[0];
-                if (_birdGroupInProgress.AcceptKey(keyChar))
-                {
-                    if (_birdGroupInProgress.IsComplete)
-                    {
-                        Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
-                        _birdGroupInProgress = new BirdGroup2();
-                    }
-                }
-                else
-                {
-                    if (_birdGroupInProgress.IsValid)
-                    {
-                        Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
-                        _birdGroupInProgress = new BirdGroup2();
-                    }
-                    else
-                    {
-                        _birdGroupInProgress.Reset();
-                    }
-                }
+                e.Handled = true;
+                NewObservationCommandExecute();
+                return;
             }
-            
+            if (dataGrid.IsFocused && e.Key == Key.Tab)
+            {
+                e.Handled = true;
+                Keyboard.Focus(angleTextBox);
+                return;
+            }
+            if (angleTextBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
+            {
+                e.Handled = true;
+                Keyboard.Focus(dataGrid);
+                return;
+            }
+            if (dataGrid.IsFocused)
+            {
+                //See if this key helps define a bird group
+                e.Handled = true;
+                DefineBirdGroup(e);
+                return;
+            }
+            base.OnKeyDown(e);
         }
-               
+
+        private void DefineBirdGroup(KeyEventArgs e)
+        {
+            string keyString = (new KeyConverter()).ConvertToString(e.Key);
+            if (string.IsNullOrEmpty(keyString))
+                return;
+            if (e.KeyboardDevice.Modifiers != ModifierKeys.None)
+                return;
+            Char keyChar = keyString[0];
+            if (BirdGroup2.RecognizeKey(keyChar) && _birdGroupInProgress.AcceptKey(keyChar))
+            {
+                if (_birdGroupInProgress.IsComplete)
+                    CompleteBirdGroup();
+            }
+            else
+            {
+                if (_birdGroupInProgress.IsValid)
+                    CompleteBirdGroup();
+                else
+                    _birdGroupInProgress.Reset();
+            }
+        }
+
+        private void CompleteBirdGroup()
+        {
+            Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
+            _birdGroupInProgress = new BirdGroup2();
+        }
+
         protected override void OnCancelCommandExecute()
         {
             //Discard this observation

@@ -1,17 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
-using ESRI.ArcGIS.Mobile.Geometries;
 
 namespace AnimalObservations
 {
     public partial class SetupTrackLogPage
     {
+        //These are used in XAML data binding so they must be public properties
+        //One-Time, One-Way bindings:
+        public CollectTrackLogTask Task { get; private set; }
+        public IDictionary<int, string> WeatherDomain { get; private set; }
+        public IDictionary<int, string> VisibilityDomain { get; private set; }
+        public IDictionary<int, string> BeaufortDomain { get; private set; }
+
+        #region Constructor
+
         public SetupTrackLogPage()
         {
+            //Call before InitializeComponent, so the onetime binding data is available
             InitializeData();
 
             InitializeComponent();
@@ -32,60 +40,64 @@ namespace AnimalObservations
 
             //Setup desired keyboard behavior
             Focusable = true;
-            Loaded += (s, e) => Keyboard.Focus(vesselTextBox);
+
+            //do some initialization each time the page is displayed
+            Loaded += SetTrackLogAndRefreshNearbyTransects;
         }
 
         private void InitializeData()
         {
             Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            UpdateSource();
-
             WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Weather");
             VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Visibility");
             BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Beaufort");
         }
 
-        internal void UpdateSource()
-        {
-            //Before page was created, we ensured there were transects on the map,
-            //when page is updated, we may not have any transects on the map (zoomed in, or panned over)
-            //In this case , maintain the previous list of transects.
-            Envelope mapExtents = MobileApplication.Current.Map.GetExtent();
-            IList<Transect> newTransects = Transect.GetWithin(mapExtents).ToList();
-            if (newTransects.Count > 0)
-                Transects = Transect.GetWithin(mapExtents).ToList();
+        #endregion
 
-            Debug.Assert(Transects != null, "Fail, Transects list is null on SetupTrackLogPage ");
-            Debug.Assert(Transects.Count > 0, "Fail, Transects list is empty on SetupTrackLogPage ");
+        #region Page update (called from Loaded event)
+
+        private void SetTrackLogAndRefreshNearbyTransects(object sender, System.Windows.RoutedEventArgs e)
+        {
+            //Update transect combobox (XAML bindings reads Task.NearbyTransects)
+            Task.RefreshNearbyTransects();
+            Transect nearestTransect = Task.NearbyTransects.GetNearest(Task.MostRecentLocation);
+
+            Debug.Assert(nearestTransect != null, "Fail, No nearest transect on SetupTrackLogPage ");
 
             if (Task.DefaultTrackLog == null)
             {
-                //TODO - Add try/catch - CreateWith() may throw an exception
-                Task.CurrentTrackLog = TrackLog.CreateWith(Transects.GetNearest(Task.MostRecentLocation));
+                //TrackLog.CreateWith() may throw an exception.  If it does, there is no way to recover.
+                //Let the exception invoke default behavior - alert user, write error log and exit app.
+                Task.CurrentTrackLog = TrackLog.CreateWith(nearestTransect);
             }
             else
             {
-                //TODO - Add try/catch - CloneFrom() may throw an exception
-                Task.CurrentTrackLog = TrackLog.CloneFrom(Task.DefaultTrackLog);
-                Task.CurrentTrackLog.Transect = Transects.GetNearest(Task.MostRecentLocation);
+                //TrackLog.CloneFrom() may throw an exception.  If it does, there is no way to recover.
+                //Let the exception invoke default behavior - alert user, write error log and exit app.
+                TrackLog newTracklog = TrackLog.CloneFrom(Task.DefaultTrackLog);
+                //make sure the transect is one of those available in the combobox
+                newTracklog.Transect = nearestTransect;
+                Task.CurrentTrackLog = newTracklog;
             }
 
-            Debug.Assert(Task.CurrentTrackLog.Transect != null, "Fail, CurrentTransect is null on SetupTrackLogPage ");
-
+            //Set keyboard focus
+            if (string.IsNullOrEmpty(vesselTextBox.Text))
+                Keyboard.Focus(vesselTextBox);
+            else
+                Keyboard.Focus(weatherComboBox);
         }
 
-        //These are public properties so they can be used in XAML
-        public CollectTrackLogTask Task { get; set; }
-        public IList<Transect> Transects { get; set; }
-        public IDictionary<int, string> WeatherDomain { get; set; }
-        public IDictionary<int, string> VisibilityDomain { get; set; }
-        public IDictionary<int, string> BeaufortDomain { get; set; }
+        #endregion
+
+        #region Page navigation overrides
 
         protected override void OnBackCommandExecute()
         {
-            //Cancel editing tracklog attributes, quits task.
+            //Cancel editing tracklog attributes, quit task.
 
-            //TODO - Is there anything I need to do to dispose of the unfinished tracklog?
+            //Delete the new uncommitted tracklog feature
+            Task.CurrentTrackLog.DeleteFeature();
             Task.DefaultTrackLog = Task.CurrentTrackLog;
             Task.CurrentTrackLog = null;
             MobileApplication.Current.Transition(PreviousPage);
@@ -95,35 +107,40 @@ namespace AnimalObservations
         {
             //Save tracklog attributes, and begin gps logging, transition to new page
 
+            //At this point geometry is invalid, so we don't bother saving the tracklog.
+            //The tracklog will save itself as soon as it has two points. 
             Task.StartRecording();
             Task.CurrentTrackLog.StartingTime = DateTime.Now;
-            //At this point geometry is invalid, so we don't bother saving.
-            //The tracklog will save itself as soon as it has two points, or a significant change in geometry. 
             MobileApplication.Current.Transition(new RecordTrackLogPage());
         }
+        
+        #endregion
+
+        #region Keyboard event overrides
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            //FIXME - Capture Tabs and don't let the user tab out of the content area.
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter ||
+                (e.Key == Key.S && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
                 OnOkCommandExecute();
                 return;
             }
-            if (e.Key == Key.Escape)
+            if (e.Key == Key.Escape ||
+                (e.Key == Key.W && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
                 OnBackCommandExecute();
                 return;
             }
-            if (beaufortComboBox.IsFocused && e.Key == Key.Tab)
+            if (beaufortComboBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
             {
                 e.Handled = true;
-                Keyboard.Focus(vesselTextBox);
+                Keyboard.Focus(transectComboBox);
                 return;
             }
-            if (vesselTextBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
+            if (transectComboBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
             {
                 e.Handled = true;
                 Keyboard.Focus(beaufortComboBox);
@@ -132,5 +149,6 @@ namespace AnimalObservations
             base.OnKeyDown(e);
         }
 
+        #endregion
     }
 }

@@ -46,14 +46,14 @@
         <Label Grid.Column="0" Grid.Row="5" Target="{Binding ElementName=weatherComboBox}" >_Weather:</Label>
         <Label Grid.Column="0" Grid.Row="6" Target="{Binding ElementName=visibilityComboBox}" >_Visibility:</Label>
         <Label Grid.Column="0" Grid.Row="7" Target="{Binding ElementName=beaufortComboBox}" >_Beaufort:</Label>
-        <ComboBox Grid.Column="1" Grid.Row="0" Name="transectComboBox" ItemsSource="{Binding Transects}" DisplayMemberPath="Name" SelectedValue="{Binding Task.CurrentTrackLog.Transect}"/>
+        <ComboBox Grid.Column="1" Grid.Row="0" Name="transectComboBox" ItemsSource="{Binding Task.NearbyTransects, Mode=OneWay}" DisplayMemberPath="Name" SelectedValue="{Binding Task.CurrentTrackLog.Transect, Mode=TwoWay}"/>
         <TextBox Grid.Column="1" Grid.Row="1" x:Name="vesselTextBox" Text="{Binding Task.CurrentTrackLog.Vessel}"/>
         <TextBox Grid.Column="1" Grid.Row="2" Name="dataRecorderTextBox" Text="{Binding Task.CurrentTrackLog.DataRecorder}"/>
         <TextBox Grid.Column="1" Grid.Row="3" Name="observer1TextBox" Text="{Binding Task.CurrentTrackLog.Observer1}"/>
         <TextBox Grid.Column="1" Grid.Row="4" Name="observer2TextBox" Text="{Binding Task.CurrentTrackLog.Observer2}"/>
-        <ComboBox Grid.Column="1" Grid.Row="5" Name="weatherComboBox" ItemsSource="{Binding WeatherDomain}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Weather}"/>
-        <ComboBox Grid.Column="1" Grid.Row="6" Name="visibilityComboBox" ItemsSource="{Binding VisibilityDomain}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Visibility}"/>
-        <ComboBox Grid.Column="1" Grid.Row="7" Name="beaufortComboBox" ItemsSource="{Binding BeaufortDomain}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Beaufort}"/>
+        <ComboBox Grid.Column="1" Grid.Row="5" Name="weatherComboBox" ItemsSource="{Binding WeatherDomain, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Weather}"/>
+        <ComboBox Grid.Column="1" Grid.Row="6" Name="visibilityComboBox" ItemsSource="{Binding VisibilityDomain, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Visibility}"/>
+        <ComboBox Grid.Column="1" Grid.Row="7" Name="beaufortComboBox" ItemsSource="{Binding BeaufortDomain, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Beaufort}"/>
     </Grid>
 </MobileClient:MobileApplicationPage>
 

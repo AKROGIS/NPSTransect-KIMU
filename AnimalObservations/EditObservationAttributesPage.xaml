@@ -4,9 +4,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:MobileClient="clr-namespace:ESRI.ArcGIS.Mobile.Client;assembly=ESRI.ArcGIS.Mobile.Client"
     xmlns:toolkit="http://schemas.microsoft.com/wpf/2008/toolkit"
+    xmlns:local="clr-namespace:AnimalObservations"
     DataContext="{Binding RelativeSource={RelativeSource Self}}"
     >
     <DockPanel>
+        <DockPanel.Resources>
+            <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+        </DockPanel.Resources>
         <Grid DockPanel.Dock="Top">
             <Grid.Resources>
                 <Style TargetType="Label">
@@ -24,23 +28,27 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition/>
+                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=angleTextBox}" >_Angle:</Label>
             <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=distanceTextBox}" >_Distance:</Label>
-            <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle}"/>
-            <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance}"/>
+            <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=dataGrid}" >_Bird Groups:</Label>
+            <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
+            <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
+            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" IsTabStop="True" />
         </Grid>
-        <StackPanel HorizontalAlignment="Center" DockPanel.Dock="Bottom" Orientation="Horizontal">
+
+        <StackPanel HorizontalAlignment="Center" DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">
             <Button Width="28" Click="BackButtonClick" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">b</Button>
             <Label Margin="5" Content="{Binding Task.OpenObservations.Count}"/>
             <Button Width="28" Click="ForwardButtonClick" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">f</Button>
         </StackPanel>
 
-        <toolkit:DataGrid Name="gridView" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" IsTabStop="True" />
         
     </DockPanel>
 </MobileClient:MobileApplicationPage>

@@ -12,50 +12,46 @@ namespace AnimalObservations
         private readonly CollectTrackLogTask _task;
         private readonly TrackLog _trackLog;
 
+        #region Constructor
+
         public RecordTrackLogPage()
         {
             _task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            if (_task == null)
-                throw new NullReferenceException("No Task!");
+            Debug.Assert(_task != null, "Fail!, Task is null in RecordTrackLogPage");
             _trackLog = _task.CurrentTrackLog;
-            Debug.Assert(_task != null, "Fail!, Task.CurrentTrackLog is null in RecordTrackLogPage");
 
             InitializeComponent();
 
             //Page Captions
             Title = "Transect " + _trackLog.Transect.Name;
             Note = "Capturing GPS points in track log";
+
             // page icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
             ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
+
             // back button
-            CancelCommand.Text = "Stop";
+            CancelCommand.Text = "Stop Recording";
             BackCommands.Add(CancelCommand);
+
             // forward Button
             OkCommand.Text = "New Observation";
             ForwardCommands.Add(OkCommand);
 
-            //Keyboard Events
+            //Setup desired keyboard behavior
             Focusable = true;
+
+            //do some initialization each time the page is displayed
             Loaded += (s, e) => Keyboard.Focus(this);
         }
 
+        #endregion
 
-        #region page navigation overrides
+        #region Page navigation overrides
 
         protected override void OnCancelCommandExecute()
         {
-            //Stop recording tracklog
-
-            //FIXME - what if there are open observations?
             _task.StopRecording();
-            //FIXME - add try/catch, or ensure no exceptions can be thrown during save
-            //FIXME provide options to user on how to proceed if save failed
-            if (!_trackLog.Save())
-            {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving track log", "Save Failed");
-            }
-            ((SetupTrackLogPage)PreviousPage).UpdateSource();
             MobileApplication.Current.Transition(PreviousPage);
         }
 
@@ -68,7 +64,8 @@ namespace AnimalObservations
             //1) Observations have a 1 to 1 relationship with GPS points,
             //2) we may never get a next GPS point,
             //3) There is a lag in communication between observers and recorders,
-            //   so the actual point of observation has already passed when this operation runs.
+            //   therefore the actual point of observation is closer to the last GPS point
+            //   than an interpolated point base on when this operation runs.
 
             //FIXME - Task.CurrentGpsPoint may be null if this thread caught the main thread between states.
             //It only happens on occasion, but enough to be annoying.
@@ -83,16 +80,17 @@ namespace AnimalObservations
 
         #endregion
 
+        #region Mouse event overrides
 
-        #region Mouse events
-
-        System.Windows.Point _mouseDownPoint;
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             //get the location of the mouse down event for use by the mouse up event
             _mouseDownPoint = e.GetPosition(this);
             base.OnMouseDown(e);
         }
+        private System.Windows.Point _mouseDownPoint;
+
+        //TODO drag image while panning
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
@@ -113,7 +111,7 @@ namespace AnimalObservations
             int dx = Convert.ToInt32(mouseUpPoint.X - _mouseDownPoint.X);
             int dy = Convert.ToInt32(mouseUpPoint.Y - _mouseDownPoint.Y);
 
-            if (dx > 5 || dy > 5)
+            if (dx < -5 || 5 < dx || dy < -5 || 5 < dy)
                 mapControl.Map.Pan(dx, dy);
 
             //otherwise, do default behavior
@@ -159,17 +157,25 @@ namespace AnimalObservations
 
         #endregion
 
-
-        #region Keyboard Events
+        #region Keyboard event overrides
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter ||
+                (e.Key == Key.S && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
+            {
+                e.Handled = true;
                 OnOkCommandExecute();
-            if (e.Key == Key.Escape)
+                return;
+            }
+            if (e.Key == Key.Escape ||
+                (e.Key == Key.W && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
+            {
+                e.Handled = true;
                 OnCancelCommandExecute();
-            if (e.Key != Key.Escape && e.Key != Key.Enter)
-                base.OnKeyDown(e);
+                return;
+            }
+            base.OnKeyDown(e);
         }
         #endregion
     }
