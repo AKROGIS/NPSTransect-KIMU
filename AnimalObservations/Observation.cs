@@ -16,7 +16,7 @@ namespace AnimalObservations
 
         private Feature Feature { get; set; }
         internal Guid Guid { get; private set; }
-        internal GpsPoint GpsPoint { get; private set; }
+        public GpsPoint GpsPoint { get; private set; }  //public for XAML binding
 
         //public properties for WPF/XAML interface binding
         public int Angle { get; set; }

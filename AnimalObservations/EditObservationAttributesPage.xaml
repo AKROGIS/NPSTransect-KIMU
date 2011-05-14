@@ -7,24 +7,22 @@
     xmlns:local="clr-namespace:AnimalObservations"
     DataContext="{Binding RelativeSource={RelativeSource Self}}"
     >
-    <DockPanel>
+    <DockPanel LastChildFill="False">
         <DockPanel.Resources>
             <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+            <Style TargetType="Label">
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Padding" Value="10,5"/>
+            </Style>
+            <Style TargetType="TextBox">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Margin" Value="10"/>
+            </Style>
         </DockPanel.Resources>
         <Grid DockPanel.Dock="Top">
-            <Grid.Resources>
-                <Style TargetType="Label">
-                    <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="VerticalContentAlignment" Value="Center"/>
-                    <Setter Property="FontSize" Value="14"/>
-                    <Setter Property="Padding" Value="10,5"/>
-                </Style>
-                <Style TargetType="TextBox">
-                    <Setter Property="VerticalContentAlignment" Value="Center"/>
-                    <Setter Property="FontSize" Value="14"/>
-                    <Setter Property="Margin" Value="10"/>
-                </Style>
-            </Grid.Resources>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition/>
@@ -38,18 +36,30 @@
             <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=angleTextBox}" >_Angle:</Label>
             <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=distanceTextBox}" >_Distance:</Label>
             <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=dataGrid}" >_Bird Groups:</Label>
-            <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
-            <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
-            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" IsTabStop="True" />
+            <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" TabIndex="10" />
+            <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" TabIndex="20" />
+            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" IsTabStop="True" TabIndex="30" />
         </Grid>
 
-        <StackPanel HorizontalAlignment="Center" DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">
-            <Button Width="28" Click="BackButtonClick" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">b</Button>
-            <Label Margin="5" Content="{Binding Task.OpenObservations.Count}"/>
-            <Button Width="28" Click="ForwardButtonClick" FontSize="16" FontWeight="Bold" Padding="3,0,3,3">f</Button>
-        </StackPanel>
-
-        
+        <StackPanel x:Name="queueDisplay" HorizontalAlignment="Stretch"  DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">
+            <Label HorizontalAlignment="left" Target="{Binding ElementName=observationListView}" >_Unfinished Observations:</Label>
+            <ListView HorizontalAlignment="right" x:Name="observationListView"  
+                  ItemsSource="{Binding Task.OpenObservations}" DisplayMemberPath="GpsPoint.DisplayTime" SelectedItem="{Binding Task.ActiveObservation}" TabIndex="40">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"></StackPanel>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        <Setter Property="FontSize" Value="13"/>
+                        <Setter Property="Padding" Value="15,5"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </StackPanel>        
     </DockPanel>
 </MobileClient:MobileApplicationPage>
 

@@ -168,7 +168,13 @@ namespace AnimalObservations
             Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
         }
 
-
         #endregion
+
+        //public for XAML binding
+        public string DisplayTime
+        {
+            get { return LocalTime.ToLongTimeString(); }
+        }   
+
     }
 }

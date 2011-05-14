@@ -83,52 +83,59 @@ namespace AnimalObservations
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            //Command keys - Save
+            if (e.Key == Key.Enter ||
+                (e.Key == Key.S && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
-                if (Task.ActiveObservation.Angle < 0 || Task.ActiveObservation.Angle > 360)
-                {
-                    Keyboard.Focus(angleTextBox);
-                    return;
-                }
-                if (Task.ActiveObservation.Distance < 1 || Task.ActiveObservation.Distance > 500)
-                {
-                    Keyboard.Focus(distanceTextBox);
-                    return;
-                }
-                if (Task.ActiveObservation.BirdGroups.Count < 1 )
-                {
-                    Keyboard.Focus(dataGrid);
-                    return;
-                }
                 OnOkCommandExecute();
                 return;
             }
-            if (e.Key == Key.Escape)
+            //Command keys - Back
+            if (e.Key == Key.Escape ||
+                (e.Key == Key.W && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
-                OnBackCommandExecute();
+                OnCancelCommandExecute();
                 return;
             }
-            if (e.Key == Key.Space)
+            //Command keys - New
+            if ((e.Key == Key.Space && !dataGrid.IsKeyboardFocusWithin) ||
+                 (e.Key == Key.N && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
                 NewObservationCommandExecute();
                 return;
             }
-            if (dataGrid.IsFocused && e.Key == Key.Tab)
+
+            //Tab handling
+            if (angleTextBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
+            {
+                e.Handled = true;
+                if (queueDisplay.Visibility == Visibility.Visible)
+                    Keyboard.Focus(observationListView);
+                else
+                    Keyboard.Focus(dataGrid);
+                return;
+            }
+            if (dataGrid.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
+            {
+                e.Handled = true;
+                if (queueDisplay.Visibility == Visibility.Visible)
+                    Keyboard.Focus(observationListView);
+                else
+                    Keyboard.Focus(angleTextBox);
+                return;
+            }
+            if (observationListView.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
             {
                 e.Handled = true;
                 Keyboard.Focus(angleTextBox);
                 return;
             }
-            if (angleTextBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
-            {
-                e.Handled = true;
-                Keyboard.Focus(dataGrid);
-                return;
-            }
-            if (dataGrid.IsFocused)
+
+            //Bird Group data entry
+            if (dataGrid.IsFocused && e.Key != Key.Tab)
             {
                 //See if this key helps define a bird group
                 e.Handled = true;
@@ -216,15 +223,6 @@ namespace AnimalObservations
         //    }
         //}
 
-        private void BackButtonClick(object sender, RoutedEventArgs e)
-        {
-            Task.PreviousObservation();
-        }
-
-        private void ForwardButtonClick(object sender, RoutedEventArgs e)
-        {
-            Task.NextObservation();
-        }
 
     }
 }
