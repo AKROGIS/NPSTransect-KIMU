@@ -193,7 +193,7 @@ namespace AnimalObservations
         internal TrackLog DefaultTrackLog { get; set; }
 
         //Use INotifyPropertyChanged to keep UI linked
-        internal TrackLog CurrentTrackLog
+        public TrackLog CurrentTrackLog
         {
             get { return _currentTrackLog; }
             set
