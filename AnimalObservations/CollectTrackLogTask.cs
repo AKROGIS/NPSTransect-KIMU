@@ -9,6 +9,16 @@ using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
 using ESRI.ArcGIS.Mobile.WPF;
 
+
+//Does not pan map to boat when we have a GPS signal
+//Actual point is to the top/left of the Boat
+
+// Field test Issues:
+//When I went off the map ( or returned from an observation page), the boat stopped drawing in the correct spot.
+//Map did not pan to keep bot in center
+//Save in observation, closed observation panel (should stay open if observation pending)
+//when I get a new observation that shoul be the active observation
+
 namespace AnimalObservations
 {
     public class CollectTrackLogTask : Task
@@ -69,14 +79,14 @@ namespace AnimalObservations
                 return;
             }
             //FIXME uncomment for production code - testing workaround
-            //if (!_gpsConnection.IsOpen || MostRecentLocation == null)
-            //{
-            //    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
-            //        "GPS is disconnected or doesn't yet have a fix on the satellites. " + 
-            //        "Correct the problems with the GPS and try again.", "No GPS Fix",
-            //        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            //    return;
-            //}
+            if (!_gpsConnection.IsOpen || MostRecentLocation == null)
+            {
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                    "GPS is disconnected or doesn't yet have a fix on the satellites. " +
+                    "Correct the problems with the GPS and try again.", "No GPS Fix",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
             //End of testing hack
             MobileApplication.Current.Transition(new SetupTrackLogPage());
         }
@@ -120,10 +130,10 @@ namespace AnimalObservations
             lock (_gpsLock)
             {
                 //FIXME - Remove for production
-                CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
-                MostRecentLocation = new Coordinate(448262, 6479766);
-                IsRecording = true;
-                return IsRecording;
+                //CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
+                //MostRecentLocation = new Coordinate(448262, 6479766);
+                //IsRecording = true;
+                //return IsRecording;
                 //End of testing hack
 
                 if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
@@ -449,12 +459,13 @@ namespace AnimalObservations
                 transformGroup.Children.Add(new RotateTransform(heading - 90.0));
                 _boat.LayoutTransform = transformGroup;
             }
-            _boat.Margin = new System.Windows.Thickness(point.X, point.Y, 0, 0);
+            _boat.Margin = new System.Windows.Thickness(point.X-24, point.Y-24, 0, 0);
             //pan map to center boat location
             //MobileApplication.Current.Map.CenterAt(location);
         }
 
         #endregion
+
 
         #region Test database Schema
 
