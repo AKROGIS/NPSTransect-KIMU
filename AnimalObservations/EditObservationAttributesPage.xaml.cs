@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
 
@@ -143,10 +144,29 @@ namespace AnimalObservations
             Keyboard.Focus(angleTextBox);
         }
 
+        protected override bool CanExecuteOkCommand()
+        {
+            //FIXME - added safety check, because this is being called after the user has closed page
+            if (Task.ActiveObservation == null)
+                return false;
+            var angleError = (bool)angleTextBox.GetValue(Validation.HasErrorProperty);
+            var distanceError = (bool)distanceTextBox.GetValue(Validation.HasErrorProperty);
+            bool birdsError = Task.ActiveObservation.BirdGroups.Count < 1;
+            return !angleError && !distanceError && !birdsError;
+        }
+
         protected override void OnOkCommandExecute()
         {
             //Save and close the current observation attribute page
             //Transition to next in list, or if empty, previous page
+
+            string validationMessage = Task.ActiveObservation.ValidateBeforeSave();
+            if (!string.IsNullOrEmpty(validationMessage))
+            {
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(validationMessage, "Incomplete Observation");
+                return;
+               
+            }
 
             bool saved;
             try
@@ -184,7 +204,8 @@ namespace AnimalObservations
                 (e.Key == Key.S && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
-                OnOkCommandExecute();
+                if (CanExecuteOkCommand())
+                    OnOkCommandExecute();
                 return;
             }
             //Command keys - Back
@@ -192,7 +213,8 @@ namespace AnimalObservations
                 (e.Key == Key.W && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
-                OnCancelCommandExecute();
+                if (CanExecuteCancelCommand())
+                    OnCancelCommandExecute();
                 return;
             }
             //Command keys - New
@@ -214,15 +236,15 @@ namespace AnimalObservations
                     Keyboard.Focus(dataGrid);
                 return;
             }
-            //if (dataGrid.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
-            //{
-            //    e.Handled = true;
-            //    if (queueDisplay.Visibility == Visibility.Visible)
-            //        Keyboard.Focus(observationListView);
-            //    else
-            //        Keyboard.Focus(angleTextBox);
-            //    return;
-            //}
+            if (dataGrid.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
+            {
+                e.Handled = true;
+                if (queueDisplay.Visibility == Visibility.Visible)
+                    Keyboard.Focus(observationListView);
+                else
+                    Keyboard.Focus(angleTextBox);
+                return;
+            }
             if (observationListView.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
             {
                 e.Handled = true;

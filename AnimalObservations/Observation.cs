@@ -19,10 +19,44 @@ namespace AnimalObservations
         public GpsPoint GpsPoint { get; private set; }  //public for XAML binding
 
         //public properties for WPF/XAML interface binding
-        public int Angle { get; set; }
-        public int Distance { get; set; }
+        public int Angle { 
+            get
+            {
+                return _angle;
+            }
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException("value", "Angle cannot be negative.");
+                if (value > 360)
+                    throw new ArgumentOutOfRangeException("value", "Angle cannot be greater than 360.");
+                _angle = value;
+            }
+        }
+        private int _angle;
+
+        public int Distance
+        {
+            get
+            {
+                return _distance;
+            }
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException("value", "Distance must be positive.");
+                if (value > 500)
+                    throw new ArgumentOutOfRangeException("value", "Distance cannot be greater than 500.");
+                _distance = value;
+            }
+        }
+        private int _distance;
+
         public ObservableCollection<BirdGroup2> BirdGroups { get; private set; }
         //public ListCollectionView BirdGroups2 { get; private set; }
+
+        //private FeatureAttribute _angleAttribute;
+        //private FeatureAttribute _distanceAttribute;
 
         #region Constructors
 
@@ -101,11 +135,37 @@ namespace AnimalObservations
                 Angle = (int)Feature.FeatureDataRow["Angle"];
             if (Feature.FeatureDataRow["Distance"] is int)
                 Distance = (int)Feature.FeatureDataRow["Distance"];
+
+            //_angleAttribute = Feature.GetAttributes("Angle")[0];
+            //_distanceAttribute = Feature.GetAttributes("Distance")[0];
         }
 
         #endregion
 
         #region Save/Update
+
+        internal string ValidateBeforeSave()
+        {
+            string errors = "";
+
+            //_angleAttribute.Value = Angle;
+            //errors = errors + _angleAttribute.ErrorMessage;
+            //_distanceAttribute.Value = Angle;
+            //errors = errors + _distanceAttribute.ErrorMessage;
+
+            
+            if (Angle < 0)
+                errors = errors + "Angle cannot be less than zero.\n";
+            if (Angle > 360)
+                errors = errors + "Angle cannot be greater than 360.\n";
+            if (Distance <= 0)
+                errors = errors + "Distance must be positive.\n";
+            if (Distance > 500)
+                errors = errors + "Distance cannot be greater than 500m.\n";
+            if (BirdGroups.Count < 1)
+                errors = errors + "Must have at least one bird group.";
+            return errors;
+        }
 
         internal bool Save()
         {
@@ -136,6 +196,7 @@ namespace AnimalObservations
 
 
         #endregion
+
     }
 }
 
