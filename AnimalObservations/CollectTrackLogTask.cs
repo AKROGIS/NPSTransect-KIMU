@@ -8,16 +8,7 @@ using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
 using ESRI.ArcGIS.Mobile.WPF;
-
-
-//Does not pan map to boat when we have a GPS signal
-//Actual point is to the top/left of the Boat
-
-// Field test Issues:
-//When I went off the map ( or returned from an observation page), the boat stopped drawing in the correct spot.
-//Map did not pan to keep bot in center
-//Save in observation, closed observation panel (should stay open if observation pending)
-//when I get a new observation that shoul be the active observation
+using GpsDisplay = ESRI.ArcGIS.Mobile.WPF.GpsDisplay;
 
 namespace AnimalObservations
 {
@@ -31,9 +22,12 @@ namespace AnimalObservations
 
             NearbyTransects = new ObservableCollection<Transect>();
 
-            MobileApplication.Current.ProjectClosing += (s, e) => StopRecording();
+            MobileApplication.Current.ProjectClosing += (s, e) =>
+            {
+                CloseGpsConnection();
+                StopRecording();
+            };
         }
-
 
         #region Overrides
 
@@ -227,7 +221,7 @@ namespace AnimalObservations
 
         #region Manage Observation Queue
 
-        //Use ObservableCollection to propegate changes to the XAML UI
+        //Use ObservableCollection to propagate changes to the XAML UI
         public ObservableCollection<Observation> OpenObservations { get; private set; }
         public Observation ActiveObservation
         {
@@ -256,7 +250,13 @@ namespace AnimalObservations
             ActiveObservation = null;
         }
 
-        public void AddObservation(Observation observation)
+        public void AddObservationAsActive(Observation observation)
+        {
+            AddObservationAsInactive(observation);
+            ActiveObservation = observation;
+        }
+
+        public void AddObservationAsInactive(Observation observation)
         {
             OpenObservations.Add(observation);
             if (ActiveObservation == null)
@@ -265,9 +265,10 @@ namespace AnimalObservations
 
         public void RemoveObservation(Observation observation)
         {
-            //If we are deleting the active record, make the first record active
             OpenObservations.Remove(observation);
-            if (observation == ActiveObservation)
+            //If we are deleting the active record, make the first record active
+            //If observation == ActiveObservation, then XAML bindings will set ActiveObservation to null
+            if (ActiveObservation == null || observation == ActiveObservation)
                 ActiveObservation = (OpenObservations.Count == 0) ? null : OpenObservations[0];
         }
 
@@ -322,6 +323,14 @@ namespace AnimalObservations
         public Coordinate MostRecentLocation { get; set; }
 
         private GpsConnection _gpsConnection;
+
+        private void CloseGpsConnection()
+        {
+            _gpsConnection.GpsClosed -= ProcessGpsClosedEventFromConnection;
+            _gpsConnection.GpsError -= ProcessGpsErrorEventFromConnection;
+            _gpsConnection.GpsChanged -= ProcessGpsChangedEventFromConnection;
+            _gpsConnection = null;
+        }
 
         private void InitializeGpsConnection()
         {
@@ -408,6 +417,9 @@ namespace AnimalObservations
             return (gpsConnection.GpsChangeType & GpsChangeType.Position) != 0;
         }
 
+
+        //public GpsDisplay 
+
         #endregion
 
 
@@ -447,6 +459,12 @@ namespace AnimalObservations
                 return;
             }
 
+            //pan map to center boat location
+            Envelope env = MobileApplication.Current.Map.GetExtent();
+            env = env.Resize(0.7);
+            if (!env.Contains(location))
+                MobileApplication.Current.Map.CenterAt(location);
+
             //heading = 0 is north (up); heading is in degrees clockwise
             //image without rotation is pointing E (270 degrees).
             System.Drawing.Point point = MobileApplication.Current.Map.ToClient(location);
@@ -459,9 +477,8 @@ namespace AnimalObservations
                 transformGroup.Children.Add(new RotateTransform(heading - 90.0));
                 _boat.LayoutTransform = transformGroup;
             }
-            _boat.Margin = new System.Windows.Thickness(point.X-24, point.Y-24, 0, 0);
-            //pan map to center boat location
-            //MobileApplication.Current.Map.CenterAt(location);
+            _boat.Margin = new System.Windows.Thickness(point.X-24, point.Y-30, 0, 0);
+            
         }
 
         #endregion

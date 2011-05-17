@@ -46,42 +46,6 @@ namespace AnimalObservations
 
         }
 
-        void RecordTrackLogPage_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            base.OnMouseUp(e);
-            if (e.Handled)
-                return;
-
-            System.Windows.Point mouseUpPoint = e.GetPosition(this);
-
-            //Check to see if the mouseup location is substantially different than the mouse down location, if so then pan and be done
-            int dx = Convert.ToInt32(mouseUpPoint.X - _mouseDownPoint.X);
-            int dy = Convert.ToInt32(mouseUpPoint.Y - _mouseDownPoint.Y);
-            bool moved = (dx < -2 || 2 < dx || dy < -2 || 2 < dy);
-
-            // and not zooming in/out 
-            if (moved)
-            {
-                Trace.TraceInformation("Mouse up passed to pan");
-                mapControl.Map.Pan(dx, dy);
-                e.Handled = true;
-                return;
-            }
-
-            //Check to see if there is an observation related to this location.  If so - edit it, then be done
-            var drawingPoint = new System.Drawing.Point(Convert.ToInt32(mouseUpPoint.X), Convert.ToInt32(mouseUpPoint.Y));
-            Observation observation = GetObservation(drawingPoint);
-            if (observation != null)
-            {
-                Trace.TraceInformation("Mouse up found observation");
-                _task.AddObservation(observation);
-                MobileApplication.Current.Transition(new EditObservationAttributesPage());
-                e.Handled = true;
-                return;
-            }
-            Trace.TraceInformation("Mouse up passed to base");
-        }
-
         #endregion
 
         #region Page navigation overrides
@@ -111,7 +75,7 @@ namespace AnimalObservations
                 return;
             //TODO - add try/catch - CreateWith() may throw exceptions
             Observation observation = Observation.CreateWith(_task.CurrentGpsPoint);
-            _task.AddObservation(observation);
+            _task.AddObservationAsActive(observation);
             MobileApplication.Current.Transition(new EditObservationAttributesPage());
         }
 
@@ -167,7 +131,7 @@ namespace AnimalObservations
             if (observation != null)
             {
                 Trace.TraceInformation("Mouse up found observation");
-                _task.AddObservation(observation);
+                _task.AddObservationAsActive(observation);
                 MobileApplication.Current.Transition(new EditObservationAttributesPage());
                 e.Handled = true;
                 return;
