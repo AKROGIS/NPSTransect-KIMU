@@ -3,10 +3,24 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:MobileClient="clr-namespace:ESRI.ArcGIS.Mobile.Client;assembly=ESRI.ArcGIS.Mobile.Client"
+    xmlns:local="clr-namespace:AnimalObservations"
     xmlns:MobileControl="clr-namespace:ESRI.ArcGIS.Mobile.Client.Controls;assembly=ESRI.ArcGIS.Mobile.Client"
     >
     <DockPanel>
         <MobileControl:MapControl Name="mapControl"/>
+        <StackPanel>
+            <StackPanel.Resources>
+                <Style TargetType="ComboBox">
+                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Margin" Value="10"/>
+                </Style>
+                </StackPanel.Resources>
+            <CheckBox Name="onTransectCheckBox" IsChecked="{Binding  Task.CurrentTrackLog.OnTransect}">On Transect</CheckBox>
+            <ComboBox Name="weatherComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.WeatherDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Weather}"/>
+            <ComboBox Name="visibilityComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.VisibilityDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Visibility}"/>
+            <ComboBox Name="beaufortComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.BeaufortDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Beaufort}"/>
+        </StackPanel>
     </DockPanel>
 </MobileClient:MobileApplicationPage>
 

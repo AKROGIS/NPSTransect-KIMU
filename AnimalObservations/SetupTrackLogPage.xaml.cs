@@ -11,9 +11,9 @@ namespace AnimalObservations
         //These are used in XAML data binding so they must be public properties
         //One-Time, One-Way bindings:
         public CollectTrackLogTask Task { get; private set; }
-        public IDictionary<int, string> WeatherDomain { get; private set; }
-        public IDictionary<int, string> VisibilityDomain { get; private set; }
-        public IDictionary<int, string> BeaufortDomain { get; private set; }
+        //public IDictionary<int, string> WeatherDomain { get; private set; }
+        //public IDictionary<int, string> VisibilityDomain { get; private set; }
+        //public IDictionary<int, string> BeaufortDomain { get; private set; }
 
         #region Constructor
 
@@ -48,9 +48,9 @@ namespace AnimalObservations
         private void InitializeData()
         {
             Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Weather");
-            VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Visibility");
-            BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Beaufort");
+            //WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Weather");
+            //VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Visibility");
+            //BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Beaufort");
         }
 
         #endregion

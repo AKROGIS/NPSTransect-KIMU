@@ -8,17 +8,20 @@ namespace AnimalObservations
 {
     public partial class RecordTrackLogPage
     {
+        //These are used in XAML data binding so they must be public properties
+        //One-Time, One-Way bindings:
+        public CollectTrackLogTask Task { get; private set; }
 
-        private readonly CollectTrackLogTask _task;
+        //private readonly CollectTrackLogTask Task;
         private readonly TrackLog _trackLog;
 
         #region Constructor
 
         public RecordTrackLogPage()
         {
-            _task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            Debug.Assert(_task != null, "Fail!, Task is null in RecordTrackLogPage");
-            _trackLog = _task.CurrentTrackLog;
+            Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
+            Debug.Assert(Task != null, "Fail!, Task is null in RecordTrackLogPage");
+            _trackLog = Task.CurrentTrackLog;
 
             InitializeComponent();
 
@@ -52,7 +55,7 @@ namespace AnimalObservations
 
         protected override void OnCancelCommandExecute()
         {
-            _task.StopRecording();
+            Task.StopRecording();
             MobileApplication.Current.Transition(PreviousPage);
         }
 
@@ -70,12 +73,12 @@ namespace AnimalObservations
 
             //FIXME - Task.CurrentGpsPoint may be null if this thread caught the main thread between states.
             //It only happens on occasion, but enough to be annoying.
-            Debug.Assert(_task.CurrentGpsPoint != null, "Fail! Current GPS Point is null when recording an observation.");
-            if (_task.CurrentGpsPoint == null)
+            Debug.Assert(Task.CurrentGpsPoint != null, "Fail! Current GPS Point is null when recording an observation.");
+            if (Task.CurrentGpsPoint == null)
                 return;
             //TODO - add try/catch - CreateWith() may throw exceptions
-            Observation observation = Observation.CreateWith(_task.CurrentGpsPoint);
-            _task.AddObservationAsActive(observation);
+            Observation observation = Observation.CreateWith(Task.CurrentGpsPoint);
+            Task.AddObservationAsActive(observation);
             MobileApplication.Current.Transition(new EditObservationAttributesPage());
         }
 
@@ -131,7 +134,7 @@ namespace AnimalObservations
             if (observation != null)
             {
                 Trace.TraceInformation("Mouse up found observation");
-                _task.AddObservationAsActive(observation);
+                Task.AddObservationAsActive(observation);
                 MobileApplication.Current.Transition(new EditObservationAttributesPage());
                 e.Handled = true;
                 return;

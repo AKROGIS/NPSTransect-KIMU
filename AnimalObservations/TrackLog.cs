@@ -11,6 +11,12 @@ namespace AnimalObservations
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Tracks");
         private static readonly Dictionary<Guid, TrackLog> TrackLogs = new Dictionary<Guid, TrackLog>();
 
+        //These are used in XAML data binding so they must be public properties
+        //One-Time, One-Way bindings:
+        public static IDictionary<int, string> WeatherDomain { get; private set; }
+        public static IDictionary<int, string> VisibilityDomain { get; private set; }
+        public static IDictionary<int, string> BeaufortDomain { get; private set; }
+
         private Feature Feature { get; set; }
         internal Guid Guid { get; private set; }
         internal DateTime StartingTime { get; set; }
@@ -25,9 +31,18 @@ namespace AnimalObservations
         public int Weather { get; set; }
         public int Visibility { get; set; }
         public int Beaufort { get; set; }
+        public bool? OnTransect { get; set; }
 
 
         #region constructors
+
+        //Class Constructor
+        static TrackLog()
+        {
+            WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Weather");
+            VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Visibility");
+            BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Beaufort");
+        }
 
         private TrackLog()
         { }
@@ -106,6 +121,8 @@ namespace AnimalObservations
                 StartingTime = (DateTime)Feature.FeatureDataRow["Start"];
             if (Feature.FeatureDataRow["End"] is DateTime)
                 FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
+            if (Feature.FeatureDataRow["OnTransect"] is string)
+                OnTransect = ((string)Feature.FeatureDataRow["OnTransect"]) == "T";
         }
 
         private void LoadAttributes(TrackLog templateTrackLog)
@@ -117,6 +134,7 @@ namespace AnimalObservations
             Weather = templateTrackLog.Weather;
             Visibility = templateTrackLog.Visibility;
             Beaufort = templateTrackLog.Beaufort;
+            OnTransect = templateTrackLog.OnTransect;
         }
 
         #endregion
@@ -159,6 +177,7 @@ namespace AnimalObservations
             Feature.FeatureDataRow["Visibility"] = Visibility;
             Feature.FeatureDataRow["Beaufort"] = Beaufort;
             Feature.FeatureDataRow["Start"] = StartingTime;
+            Feature.FeatureDataRow["OnTransect"] = OnTransect == null ? (object)DBNull.Value : OnTransect.Value == true ? "T" : "F";
         }
 
         internal void Delete()

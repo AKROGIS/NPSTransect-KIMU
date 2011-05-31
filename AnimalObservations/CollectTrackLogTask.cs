@@ -73,14 +73,14 @@ namespace AnimalObservations
                 return;
             }
             //FIXME uncomment for production code - testing workaround
-            if (!_gpsConnection.IsOpen || MostRecentLocation == null)
-            {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
-                    "GPS is disconnected or doesn't yet have a fix on the satellites. " +
-                    "Correct the problems with the GPS and try again.", "No GPS Fix",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                return;
-            }
+            //if (!_gpsConnection.IsOpen || MostRecentLocation == null)
+            //{
+            //    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+            //        "GPS is disconnected or doesn't yet have a fix on the satellites. " +
+            //        "Correct the problems with the GPS and try again.", "No GPS Fix",
+            //        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            //    return;
+            //}
             //End of testing hack
             MobileApplication.Current.Transition(new SetupTrackLogPage());
         }
@@ -125,10 +125,10 @@ namespace AnimalObservations
             //lock (_gpsLock)
             //{
                 //FIXME - Remove for production
-                //CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
-                //MostRecentLocation = new Coordinate(448262, 6479766);
-                //IsRecording = true;
-                //return IsRecording;
+            CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
+            MostRecentLocation = new Coordinate(448262, 6479766);
+            IsRecording = true;
+            return IsRecording;
                 //End of testing hack
 
                 if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
@@ -329,6 +329,8 @@ namespace AnimalObservations
 
         private void CloseGpsConnection()
         {
+            if (_gpsConnection == null)
+                return;
             _gpsConnection.GpsClosed -= ProcessGpsClosedEventFromConnection;
             _gpsConnection.GpsError -= ProcessGpsErrorEventFromConnection;
             _gpsConnection.GpsChanged -= ProcessGpsChangedEventFromConnection;

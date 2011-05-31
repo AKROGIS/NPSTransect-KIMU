@@ -61,6 +61,17 @@ namespace AnimalObservations
                 if (e.PropertyName == "ActiveObservation" && Task.ActiveObservation != null)
                     Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
             };
+
+            angleTextBox.GotKeyboardFocus += (s, e) =>
+            {
+                angleTextBox.SelectAll();
+            };
+
+            distanceTextBox.GotKeyboardFocus += (s, e) =>
+            {
+                distanceTextBox.SelectAll();
+            };
+
         }
 
         private void InitializeData()
@@ -274,6 +285,7 @@ namespace AnimalObservations
 
             base.OnKeyDown(e);
         }
+
 
         #endregion
 

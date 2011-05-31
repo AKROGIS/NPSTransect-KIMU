@@ -111,7 +111,7 @@ namespace AnimalObservations
         internal bool Save()
         {
             //Toggle one of the following lines for choice of reference system
-            Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.TransectHeading);
+            Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.BoatHeading);
             //Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.BoatHeading);
             Feature.FeatureDataRow["ObservationID"] = Observation.Guid;
             Feature.FeatureDataRow["GroupSize"] = Size;
