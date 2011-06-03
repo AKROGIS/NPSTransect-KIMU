@@ -39,25 +39,28 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=transectComboBox}" >_Transect:</Label>
         <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=vesselTextBox}" >Ve_ssel:</Label>
         <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=dataRecorderTextBox}" >_Data Recorder:</Label>
         <Label Grid.Column="0" Grid.Row="3" Target="{Binding ElementName=observer1TextBox}" >Observer #_1:</Label>
         <Label Grid.Column="0" Grid.Row="4" Target="{Binding ElementName=observer2TextBox}" >Observer #_2:</Label>
-        <Label Grid.Column="0" Grid.Row="5" Target="{Binding ElementName=weatherComboBox}" >_Weather:</Label>
-        <Label Grid.Column="0" Grid.Row="6" Target="{Binding ElementName=visibilityComboBox}" >_Visibility:</Label>
-        <Label Grid.Column="0" Grid.Row="7" Target="{Binding ElementName=beaufortComboBox}" >_Beaufort:</Label>
-        <Label Grid.Column="0" Grid.Row="8" Target="{Binding ElementName=onTransectCheckBox}" >_On Transect:</Label>
+        <Label Grid.Column="0" Grid.Row="5" Target="{Binding ElementName=protocolTextBox}" >_Protocol ID:</Label>
+        <Label Grid.Column="0" Grid.Row="6" Target="{Binding ElementName=weatherComboBox}" >_Weather:</Label>
+        <Label Grid.Column="0" Grid.Row="7" Target="{Binding ElementName=visibilityComboBox}" >_Visibility:</Label>
+        <Label Grid.Column="0" Grid.Row="8" Target="{Binding ElementName=beaufortComboBox}" >_Beaufort:</Label>
+        <Label Grid.Column="0" Grid.Row="9" Target="{Binding ElementName=onTransectCheckBox}" >_On Transect:</Label>
         <ComboBox Grid.Column="1" Grid.Row="0" Name="transectComboBox" ItemsSource="{Binding Task.NearbyTransects, Mode=OneWay}" DisplayMemberPath="Name" SelectedValue="{Binding Task.CurrentTrackLog.Transect, Mode=TwoWay}"/>
         <TextBox Grid.Column="1" Grid.Row="1" x:Name="vesselTextBox" Text="{Binding Task.CurrentTrackLog.Vessel}"/>
         <TextBox Grid.Column="1" Grid.Row="2" Name="dataRecorderTextBox" Text="{Binding Task.CurrentTrackLog.DataRecorder}"/>
         <TextBox Grid.Column="1" Grid.Row="3" Name="observer1TextBox" Text="{Binding Task.CurrentTrackLog.Observer1}"/>
         <TextBox Grid.Column="1" Grid.Row="4" Name="observer2TextBox" Text="{Binding Task.CurrentTrackLog.Observer2}"/>
-        <ComboBox Grid.Column="1" Grid.Row="5" Name="weatherComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.WeatherDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Weather}"/>
-        <ComboBox Grid.Column="1" Grid.Row="6" Name="visibilityComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.VisibilityDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Visibility}"/>
-        <ComboBox Grid.Column="1" Grid.Row="7" Name="beaufortComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.BeaufortDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Beaufort}"/>
-        <CheckBox Grid.Column="1" Grid.Row="8" Name="onTransectCheckBox" IsChecked="{Binding  Task.CurrentTrackLog.OnTransect}"/>
+        <TextBox Grid.Column="1" Grid.Row="5" Name="protocolTextBox" Text="{Binding Task.CurrentTrackLog.ProtocolId}"/>
+        <ComboBox Grid.Column="1" Grid.Row="6" Name="weatherComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.WeatherDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Weather}"/>
+        <ComboBox Grid.Column="1" Grid.Row="7" Name="visibilityComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.VisibilityDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Visibility}"/>
+        <ComboBox Grid.Column="1" Grid.Row="8" Name="beaufortComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.BeaufortDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Task.CurrentTrackLog.Beaufort}"/>
+        <CheckBox Grid.Column="1" Grid.Row="9" Name="onTransectCheckBox" IsChecked="{Binding  Task.CurrentTrackLog.OnTransect}"/>
     </Grid>
 </MobileClient:MobileApplicationPage>
 

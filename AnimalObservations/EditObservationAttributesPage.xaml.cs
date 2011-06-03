@@ -14,8 +14,6 @@ namespace AnimalObservations
 
         //These are public properties so that they are visible in XAML
         public CollectTrackLogTask Task { get; private set; }
-        public IDictionary<string, string> BehaviorDomain { get; private set; }
-        public IDictionary<string, string> SpeciesDomain { get; private set; }
 
         #region Constructor
 
@@ -86,8 +84,6 @@ namespace AnimalObservations
             //TODO: Consider using the feature attributes for handy property binding to tooltip, validation, etc.
             //FeatureAttribute Angle = Task.ActiveObservation.Feature.GetEditableAttributes()[0];
 
-            BehaviorDomain = MobileUtilities.GetCodedValueDictionary<string>(BirdGroup.FeatureLayer, "Behavior");
-            SpeciesDomain = MobileUtilities.GetCodedValueDictionary<string>(BirdGroup.FeatureLayer, "Species");
         }
 
         #endregion

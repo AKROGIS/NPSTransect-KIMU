@@ -133,10 +133,10 @@ namespace AnimalObservations
             Speed = gpsConnection.Speed;
             Bearing = gpsConnection.Course;
 
-            //Offset Regan's office to GLBA main dock
-            //Latitude -= 2.7618;
-            //Longitude += 13.9988;
-            //Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
+            //Offset Regan's office to end of Transect MainBay19
+            Latitude -= (61.217311111 - 58.495580); //2.7618;
+            Longitude += (149.885638889 - 135.964885); //13.9988;
+            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
         }

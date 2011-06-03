@@ -19,11 +19,26 @@ namespace AnimalObservations
 
         public RecordTrackLogPage()
         {
-            Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            Debug.Assert(Task != null, "Fail!, Task is null in RecordTrackLogPage");
+            Task = (CollectTrackLogTask)MobileApplication.Current.FindTask(typeof(CollectTrackLogTask));
             _trackLog = Task.CurrentTrackLog;
 
             InitializeComponent();
+
+
+            //We aren't using bindings because when a value changes we need to stop recording, change, start recording
+            //And the object being changed (tracklog) know s nothing about stoping and starting recording.
+            weatherComboBox.SelectedValue = Task.CurrentTrackLog.Weather;
+            visibilityComboBox.SelectedValue = Task.CurrentTrackLog.Visibility;
+            beaufortComboBox.SelectedValue = Task.CurrentTrackLog.Beaufort;
+            onTransectCheckBox.IsChecked = Task.CurrentTrackLog.OnTransect;
+            // wire up the event handlers after initializing the values to revent the initialization from firing the events.
+            weatherComboBox.SelectionChanged += weatherComboBox_SelectionChanged;
+            visibilityComboBox.SelectionChanged += visibilityComboBox_SelectionChanged;
+            beaufortComboBox.SelectionChanged += beaufortComboBox_SelectionChanged;
+            onTransectCheckBox.Checked += onTransectCheckBox_Changed;
+            onTransectCheckBox.Unchecked += onTransectCheckBox_Changed;
+
+
 
             //Page Captions
             Title = "Transect " + _trackLog.Transect.Name;
@@ -200,8 +215,60 @@ namespace AnimalObservations
                 OnCancelCommandExecute();
                 return;
             }
+            if (onTransectCheckBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
+            {
+                e.Handled = true;
+                Keyboard.Focus(weatherComboBox);
+                return;
+            }
+            if (weatherComboBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
+            {
+                e.Handled = true;
+                Keyboard.Focus(onTransectCheckBox);
+                return;
+            }
             base.OnKeyDown(e);
         }
+        #endregion
+
+        #region UI Events
+
+        private void beaufortComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            newTracklog.Beaufort = (int)beaufortComboBox.SelectedValue;
+            Task.StopRecording();
+            Task.CurrentTrackLog = newTracklog;
+            Task.StartRecording();
+        }
+
+        private void weatherComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            newTracklog.Weather = (int)weatherComboBox.SelectedValue;
+            Task.StopRecording();
+            Task.CurrentTrackLog = newTracklog;
+            Task.StartRecording();
+        }
+
+        private void visibilityComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            newTracklog.Visibility = (int)visibilityComboBox.SelectedValue;
+            Task.StopRecording();
+            Task.CurrentTrackLog = newTracklog;
+            Task.StartRecording();
+        }
+
+        private void onTransectCheckBox_Changed(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            newTracklog.OnTransect = onTransectCheckBox.IsChecked;
+            Task.StopRecording();
+            Task.CurrentTrackLog = newTracklog;
+            Task.StartRecording();
+        }
+
         #endregion
     }
 }

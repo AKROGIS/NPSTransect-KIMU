@@ -28,22 +28,23 @@ namespace AnimalObservations
         public string DataRecorder { get; set; }
         public string Observer1 { get; set; }
         public string Observer2 { get; set; }
+        public string ProtocolId { get; set; }
         public int Weather { get; set; }
         public int Visibility { get; set; }
         public int Beaufort { get; set; }
         public bool? OnTransect { get; set; }
-
 
         #region constructors
 
         //Class Constructor
         static TrackLog()
         {
-            WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Weather");
-            VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Visibility");
-            BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Beaufort");
+            WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureLayer, "Weather");
+            VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureLayer, "Visibility");
+            BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureLayer, "Beaufort");
         }
 
+        //Instance Constructor  - not permitted, use static create/from methods.
         private TrackLog()
         { }
 
@@ -111,6 +112,7 @@ namespace AnimalObservations
             DataRecorder = Feature.FeatureDataRow["Recorder"] as string;
             Observer1 = Feature.FeatureDataRow["Observer1"] as string;
             Observer2 = Feature.FeatureDataRow["Observer2"] as string;
+            ProtocolId = Feature.FeatureDataRow["Protocol_Id"] as string;
             if (Feature.FeatureDataRow["Weather"] is int)
                 Weather = (int)Feature.FeatureDataRow["Weather"];
             if (Feature.FeatureDataRow["Visibility"] is int)
@@ -122,7 +124,8 @@ namespace AnimalObservations
             if (Feature.FeatureDataRow["End"] is DateTime)
                 FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
             if (Feature.FeatureDataRow["OnTransect"] is string)
-                OnTransect = ((string)Feature.FeatureDataRow["OnTransect"]) == "T";
+                OnTransect = ((string)Feature.FeatureDataRow["OnTransect"]) == "True";
+
         }
 
         private void LoadAttributes(TrackLog templateTrackLog)
@@ -131,6 +134,7 @@ namespace AnimalObservations
             DataRecorder = templateTrackLog.DataRecorder;
             Observer1 = templateTrackLog.Observer1;
             Observer2 = templateTrackLog.Observer2;
+            ProtocolId = templateTrackLog.ProtocolId;
             Weather = templateTrackLog.Weather;
             Visibility = templateTrackLog.Visibility;
             Beaufort = templateTrackLog.Beaufort;
@@ -173,11 +177,12 @@ namespace AnimalObservations
             Feature.FeatureDataRow["Recorder"] = DataRecorder ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Observer1"] = Observer1 ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Observer2"] = Observer2 ?? (object)DBNull.Value;
+            Feature.FeatureDataRow["Protocol_Id"] = ProtocolId ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Weather"] = Weather;
             Feature.FeatureDataRow["Visibility"] = Visibility;
             Feature.FeatureDataRow["Beaufort"] = Beaufort;
             Feature.FeatureDataRow["Start"] = StartingTime;
-            Feature.FeatureDataRow["OnTransect"] = OnTransect == null ? (object)DBNull.Value : OnTransect.Value == true ? "T" : "F";
+            Feature.FeatureDataRow["OnTransect"] = OnTransect == null ? (object)DBNull.Value : OnTransect.Value.ToString();
         }
 
         internal void Delete()
@@ -190,7 +195,6 @@ namespace AnimalObservations
         {
             Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
         }
-
 
         #endregion
     }

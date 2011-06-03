@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
@@ -11,9 +10,6 @@ namespace AnimalObservations
         //These are used in XAML data binding so they must be public properties
         //One-Time, One-Way bindings:
         public CollectTrackLogTask Task { get; private set; }
-        //public IDictionary<int, string> WeatherDomain { get; private set; }
-        //public IDictionary<int, string> VisibilityDomain { get; private set; }
-        //public IDictionary<int, string> BeaufortDomain { get; private set; }
 
         #region Constructor
 
@@ -134,7 +130,7 @@ namespace AnimalObservations
                 OnBackCommandExecute();
                 return;
             }
-            if (beaufortComboBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
+            if (onTransectCheckBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
             {
                 e.Handled = true;
                 Keyboard.Focus(transectComboBox);
@@ -143,7 +139,7 @@ namespace AnimalObservations
             if (transectComboBox.IsFocused && e.KeyboardDevice.Modifiers == ModifierKeys.Shift && e.Key == Key.Tab)
             {
                 e.Handled = true;
-                Keyboard.Focus(beaufortComboBox);
+                Keyboard.Focus(onTransectCheckBox);
                 return;
             }
             base.OnKeyDown(e);

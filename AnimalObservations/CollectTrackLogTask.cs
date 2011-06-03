@@ -8,7 +8,7 @@ using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
 using ESRI.ArcGIS.Mobile.WPF;
-using GpsDisplay = ESRI.ArcGIS.Mobile.WPF.GpsDisplay;
+//using GpsDisplay = ESRI.ArcGIS.Mobile.WPF.GpsDisplay;
 
 namespace AnimalObservations
 {
@@ -72,7 +72,7 @@ namespace AnimalObservations
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
-            //FIXME uncomment for production code - testing workaround
+            //FIXME uncomment for production code - testing workaround  Also see StartRecording()
             //if (!_gpsConnection.IsOpen || MostRecentLocation == null)
             //{
             //    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
@@ -126,7 +126,8 @@ namespace AnimalObservations
             //{
                 //FIXME - Remove for production
             CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
-            MostRecentLocation = new Coordinate(448262, 6479766);
+            MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
+            //MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
             IsRecording = true;
             return IsRecording;
                 //End of testing hack
@@ -434,8 +435,10 @@ namespace AnimalObservations
                     //Offset Regan's office to GLBA main dock
                     //latitude -= 2.7618;
                     //longitude += 13.9988;
-                    //MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
-
+                    //Offset Regan's office to end of Transect MainBay19
+                    latitude -= (61.217311111 - 58.495580);
+                    longitude += (149.885638889 - 135.964885);
+                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
                 }
                 //}
                 if (OpenObservations.Count == 0)

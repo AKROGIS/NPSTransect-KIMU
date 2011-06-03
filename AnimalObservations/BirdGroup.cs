@@ -19,6 +19,13 @@ namespace AnimalObservations
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("BirdGroups");
         private static readonly Dictionary<Guid, BirdGroup> BirdGroups = new Dictionary<Guid, BirdGroup>();
 
+        //These are used in XAML data binding so they must be public properties
+        //One-Time, One-Way bindings:
+        //NOTE - currently not used, since datagrid uses enums in BirdGroup2 for picklists
+        public static IDictionary<string, string> BehaviorDomain { get; private set; }
+        public static IDictionary<string, string> SpeciesDomain { get; private set; }
+
+
         private Feature Feature { get; set; }
         internal Guid Guid { get; private set; }
         internal Observation Observation { get; private set; }
@@ -46,6 +53,14 @@ namespace AnimalObservations
             return results;
         }
 
+        //Class Constructor
+        static BirdGroup()
+        {
+            BehaviorDomain = MobileUtilities.GetCodedValueDictionary<string>(FeatureLayer, "Behavior");
+            SpeciesDomain = MobileUtilities.GetCodedValueDictionary<string>(FeatureLayer, "Species");
+        }
+
+        //Instance Constructor  - not permitted, use static create/from methods.
         private BirdGroup()
         { }
 
@@ -112,7 +127,7 @@ namespace AnimalObservations
         {
             //Toggle one of the following lines for choice of reference system
             Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.BoatHeading);
-            //Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.BoatHeading);
+            //Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.TransectHeading);
             Feature.FeatureDataRow["ObservationID"] = Observation.Guid;
             Feature.FeatureDataRow["GroupSize"] = Size;
             Feature.FeatureDataRow["Behavior"] = Behavior.ToString();
@@ -126,10 +141,7 @@ namespace AnimalObservations
             Azimuth azimuth;
             switch (angleBasis)
             {
-                case BirdGroupLocationRelativeTo.BoatHeading:
-                    azimuth = Observation.GpsPoint.Bearing;
-                    break;
-                default:
+                case BirdGroupLocationRelativeTo.TransectHeading:
                     try
                     {
                         //If this throws an exception, then fall back to the boat bearing
@@ -140,6 +152,9 @@ namespace AnimalObservations
                         Trace.TraceError("Unable to compute azimuth of transect.  Using boat's azimuth.\n{0}", ex);
                         azimuth = Observation.GpsPoint.Bearing;
                     }
+                    break;
+                default:
+                    azimuth = Observation.GpsPoint.Bearing;
                     break;
             }
 
