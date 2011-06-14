@@ -114,9 +114,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HelloWorldTask.ame" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="duck-icon.png" />
   </ItemGroup>
   <ItemGroup>
