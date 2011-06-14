@@ -138,7 +138,7 @@ namespace AnimalObservations
             Longitude += (149.885638889 - 135.964885); //13.9988;
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 
-            Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
+            //Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
         }
 
         #endregion
