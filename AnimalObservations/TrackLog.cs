@@ -112,7 +112,7 @@ namespace AnimalObservations
             DataRecorder = Feature.FeatureDataRow["Recorder"] as string;
             Observer1 = Feature.FeatureDataRow["Observer1"] as string;
             Observer2 = Feature.FeatureDataRow["Observer2"] as string;
-            ProtocolId = Feature.FeatureDataRow["Protocol_Id"] as string;
+            ProtocolId = Feature.FeatureDataRow["Protocol_ID"] as string;
             if (Feature.FeatureDataRow["Weather"] is int)
                 Weather = (int)Feature.FeatureDataRow["Weather"];
             if (Feature.FeatureDataRow["Visibility"] is int)
@@ -177,7 +177,7 @@ namespace AnimalObservations
             Feature.FeatureDataRow["Recorder"] = DataRecorder ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Observer1"] = Observer1 ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Observer2"] = Observer2 ?? (object)DBNull.Value;
-            Feature.FeatureDataRow["Protocol_Id"] = ProtocolId ?? (object)DBNull.Value;
+            Feature.FeatureDataRow["Protocol_ID"] = ProtocolId ?? (object)DBNull.Value;
             Feature.FeatureDataRow["Weather"] = Weather;
             Feature.FeatureDataRow["Visibility"] = Visibility;
             Feature.FeatureDataRow["Beaufort"] = Beaufort;
