@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define TESTINGWITHOUTGPS
+#define GPSINANCHORAGE
+
+using System;
 using System.Collections.Generic;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
@@ -52,9 +55,10 @@ namespace AnimalObservations
                 throw new ArgumentNullException("trackLog");
             if (gpsConnection == null)
                 throw new ArgumentNullException("gpsConnection");
+#if !TESTINGWITHOUTGPS
             if (!gpsConnection.IsOpen)
                 throw new InvalidOperationException("GPS connection is closed");
-
+#endif
             //May throw an exception, but should never return null
             var gpsPoint = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
             gpsPoint.TrackLog = trackLog;
@@ -132,13 +136,17 @@ namespace AnimalObservations
             SatelliteFixStatus = gpsConnection.FixStatus;
             Speed = gpsConnection.Speed;
             Bearing = gpsConnection.Course;
-
+#if TESTINGWITHOUTGPS
+            Location = new Coordinate(443759, 6484291);  //East end of MainBay19
+            Bearing = 0;
+#elif GPSINANCHORAGE
             //Offset Regan's office to end of Transect MainBay19
             Latitude -= (61.217311111 - 58.495580); //2.7618;
             Longitude += (149.885638889 - 135.964885); //13.9988;
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
-
-            //Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
+#else
+            Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
+#endif
         }
 
         #endregion

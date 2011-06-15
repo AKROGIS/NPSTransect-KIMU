@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define TESTINGWITHOUTGPS
+
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Controls;
@@ -72,7 +74,10 @@ namespace AnimalObservations
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
-            //FIXME uncomment for production code - testing workaround  Also see StartRecording()
+#if TESTINGWITHOUTGPS
+            ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Program is operating in Test mode.", "No GPS Fix");
+#else
+            //Not used in production code - testing workaround  Also see StartRecording()
             if (!_gpsConnection.IsOpen || MostRecentLocation == null)
             {
                 ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
@@ -82,6 +87,7 @@ namespace AnimalObservations
                 return;
             }
             //End of testing hack
+#endif
             MobileApplication.Current.Transition(new SetupTrackLogPage());
         }
 
@@ -124,14 +130,13 @@ namespace AnimalObservations
             //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
             //lock (_gpsLock)
             //{
-                //FIXME - Remove for production
-    //CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog);
-    //MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
-    ////MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
-    //IsRecording = true;
-    //return IsRecording;
-                //End of testing hack
-
+#if TESTINGWITHOUTGPS
+                //Create a bogus GPS location
+                CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, _gpsConnection);
+                //MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
+                MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
+                return (IsRecording = true);
+#else
                 if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
                 {
                     IsRecording = false;
@@ -144,6 +149,7 @@ namespace AnimalObservations
                     //Connection_GpsChanged(null, null);
                 }
                 return IsRecording;
+#endif
             //}
         }
 
@@ -163,9 +169,11 @@ namespace AnimalObservations
             //{
                 if (IsRecording)
                 {
+#if !TESTINGWITHOUTGPS
                     //Save any outstanding changes
                     if (!PostChanges())
                         ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving changes", "Save Failed");
+#endif
                     //Close any open observations
                     while (ActiveObservation != null)
                         OpenObservations.Remove(ActiveObservation);
