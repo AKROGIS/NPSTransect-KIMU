@@ -1,5 +1,5 @@
 ﻿#define TESTINGWITHOUTGPS
-#define GPSINANCHORAGE
+//#define GPSINANCHORAGE
 
 using System;
 using System.Collections.Generic;
@@ -145,7 +145,7 @@ namespace AnimalObservations
             Longitude += (149.885638889 - 135.964885); //13.9988;
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 #else
-            Location = MobileApplication.Current.Project.SpatialReference.FromGps(gpsConnection.Longitude, gpsConnection.Latitude);
+            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 #endif
         }
 

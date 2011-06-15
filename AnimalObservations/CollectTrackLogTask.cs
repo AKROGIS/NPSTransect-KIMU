@@ -1,4 +1,5 @@
 ﻿#define TESTINGWITHOUTGPS
+//#define GPSINANCHORAGE
 
 using System;
 using System.Collections.ObjectModel;
@@ -429,15 +430,11 @@ namespace AnimalObservations
                 {
                     double latitude = _gpsConnection.Latitude;
                     double longitude = _gpsConnection.Longitude;
-
-                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(_gpsConnection.Longitude, _gpsConnection.Latitude);
-
-                    //Offset Regan's office to GLBA main dock
-                    //latitude -= 2.7618;
-                    //longitude += 13.9988;
+#if GPSINANCHORAGE
                     //Offset Regan's office to end of Transect MainBay19
                     latitude -= (61.217311111 - 58.495580);
                     longitude += (149.885638889 - 135.964885);
+#endif
                     MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
                 }
                 //}
