@@ -64,6 +64,8 @@ namespace AnimalObservations
         {
             BirdGroups = new ObservableCollection<BirdGroup2>();
             //BirdGroups2 = new ListCollectionView(BirdGroups);
+            //Create a default record to seed the datagrid, otherwise the datagrid shows no rows
+            BirdGroups.Add(new BirdGroup2());
         }
 
         //May return null if no feature is found with matching guid

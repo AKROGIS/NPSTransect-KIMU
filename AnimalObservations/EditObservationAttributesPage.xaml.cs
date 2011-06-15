@@ -233,40 +233,40 @@ namespace AnimalObservations
                 return;
             }
 
-            //Tab handling
-            if (angleTextBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
-            {
-                e.Handled = true;
-                if (queueDisplay.Visibility == Visibility.Visible)
-                    Keyboard.Focus(observationListView);
-                else
-                    Keyboard.Focus(dataGrid);
-                return;
-            }
-            if (dataGrid.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
-            {
-                e.Handled = true;
-                if (queueDisplay.Visibility == Visibility.Visible)
-                    Keyboard.Focus(observationListView);
-                else
-                    Keyboard.Focus(angleTextBox);
-                return;
-            }
-            if (observationListView.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
-            {
-                e.Handled = true;
-                Keyboard.Focus(angleTextBox);
-                return;
-            }
+            ////Tab handling
+            //if (angleTextBox.IsFocused && e.Key == Key.Tab && e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
+            //{
+            //    e.Handled = true;
+            //    if (queueDisplay.Visibility == Visibility.Visible)
+            //        Keyboard.Focus(observationListView);
+            //    else
+            //        Keyboard.Focus(dataGrid);
+            //    return;
+            //}
+            //if (dataGrid.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
+            //{
+            //    e.Handled = true;
+            //    if (queueDisplay.Visibility == Visibility.Visible)
+            //        Keyboard.Focus(observationListView);
+            //    else
+            //        Keyboard.Focus(angleTextBox);
+            //    return;
+            //}
+            //if (observationListView.IsKeyboardFocusWithin && e.Key == Key.Tab && e.KeyboardDevice.Modifiers != ModifierKeys.Shift)
+            //{
+            //    e.Handled = true;
+            //    Keyboard.Focus(angleTextBox);
+            //    return;
+            //}
 
-            //Bird Group data entry
-            if (dataGrid.IsFocused && e.Key != Key.Tab)
-            {
-                //See if this key helps define a bird group
-                e.Handled = true;
-                DefineBirdGroup(e);
-                return;
-            }
+            ////Bird Group data entry
+            //if (dataGrid.IsFocused && e.Key != Key.Tab)
+            //{
+            //    //See if this key helps define a bird group
+            //    e.Handled = true;
+            //    DefineBirdGroup(e);
+            //    return;
+            //}
 
             //FIXME capture the delete event in the data grid to properly dispose of the birdgroup. 
             //private void RemoveButton_Click(object sender, RoutedEventArgs e)

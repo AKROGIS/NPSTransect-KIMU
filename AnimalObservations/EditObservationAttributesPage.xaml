@@ -36,15 +36,15 @@
             <Label Grid.Column="0" Grid.Row="0" Target="{Binding ElementName=angleTextBox}" >_Angle:</Label>
             <Label Grid.Column="0" Grid.Row="1" Target="{Binding ElementName=distanceTextBox}" >_Distance:</Label>
             <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=dataGrid}" >_Bird Groups:</Label>
-            <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" TabIndex="10" />
-            <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" TabIndex="20" />
-            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" IsTabStop="True" TabIndex="30" />
+            <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" />
+            <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" />
+            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" />
         </Grid>
 
         <StackPanel x:Name="queueDisplay" HorizontalAlignment="Stretch"  DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">
             <Label HorizontalAlignment="left" Target="{Binding ElementName=observationListView}" >_Unfinished Observations:</Label>
             <ListView HorizontalAlignment="right" x:Name="observationListView"  
-                  ItemsSource="{Binding Task.OpenObservations}" DisplayMemberPath="GpsPoint.DisplayTime" SelectedItem="{Binding Task.ActiveObservation}" TabIndex="40">
+                  ItemsSource="{Binding Task.OpenObservations}" DisplayMemberPath="GpsPoint.DisplayTime" SelectedItem="{Binding Task.ActiveObservation}" >
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"></StackPanel>
