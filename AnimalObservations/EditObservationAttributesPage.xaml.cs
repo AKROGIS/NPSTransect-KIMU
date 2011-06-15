@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
+using Microsoft.Windows.Controls;
 
 namespace AnimalObservations
 {
@@ -278,5 +279,16 @@ namespace AnimalObservations
         {
             Keyboard.Focus(angleTextBox);
         }
+        
+        private void dataGrid_Selected(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (e.OriginalSource.GetType() == typeof(DataGridCell))
+            {
+                // Starts the Edit on the row;
+                DataGrid grd = (DataGrid)sender;
+                grd.BeginEdit(e);
+            }
+        }
+
     }
 }
