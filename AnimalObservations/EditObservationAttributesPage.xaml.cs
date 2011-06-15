@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
@@ -60,15 +58,8 @@ namespace AnimalObservations
                     Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
             };
 
-            angleTextBox.GotKeyboardFocus += (s, e) =>
-            {
-                angleTextBox.SelectAll();
-            };
-
-            distanceTextBox.GotKeyboardFocus += (s, e) =>
-            {
-                distanceTextBox.SelectAll();
-            };
+            angleTextBox.GotKeyboardFocus += (s, e) => angleTextBox.SelectAll();
+            distanceTextBox.GotKeyboardFocus += (s, e) => distanceTextBox.SelectAll();
 
         }
 
@@ -131,8 +122,6 @@ namespace AnimalObservations
 
             //FIXME - Are we editing an existing observation - discard changes, but do not delete observation
             //FIXME - if we are creating a new observation - delete newly create record.
- 
-            //ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Delete observation", "Ok");
             //FIXME - if the observation has been saved (during creation?) then it should be deleted
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
@@ -143,7 +132,7 @@ namespace AnimalObservations
         {
             //Log observation point and add observation attribute page to the queue, do not change pages
 
-            //TODO - add try/catch - CreateWith() may throw exceptions
+            //CreateWith() may throw exceptions, but that would be catastrophic, so let the app handle it.
             //Only use one of the following based on prefered behavior
             Task.AddObservationAsActive(Observation.CreateWith(Task.CurrentGpsPoint));
             //Task.AddObservationAsInactive(Observation.CreateWith(Task.CurrentGpsPoint));
@@ -153,7 +142,7 @@ namespace AnimalObservations
 
         protected override bool CanExecuteOkCommand()
         {
-            //FIXME - added safety check, because this is being called after the user has closed page
+            //nullity check is required, because this override is called when the page is closing
             if (Task.ActiveObservation == null)
                 return false;
             var angleError = (bool)angleTextBox.GetValue(Validation.HasErrorProperty);
@@ -182,7 +171,7 @@ namespace AnimalObservations
             }
             catch (Exception ex)
             {
-                //FIXME provide better options to user on how to proceed if save failed
+                //TODO provide better options to user on how to proceed if save failed
                 Trace.TraceError("Error saving observation/bird groups. " + ex);
                 saved = false;
             }

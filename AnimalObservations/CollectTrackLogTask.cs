@@ -189,18 +189,10 @@ namespace AnimalObservations
 
         private bool PostChanges()
         {
-            bool saved;
-            try
-            {
-                saved = CurrentTrackLog.Save();
-                foreach (var observation in OpenObservations)
-                    saved = saved && observation.Save();
-            }
-            catch (Exception)
-            {
-                //TODO - post the exception to an error log file
-                saved = false;
-            }
+            //Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
+            bool saved = CurrentTrackLog.Save();
+            foreach (var observation in OpenObservations)
+                saved = saved && observation.Save();
             return saved;
         }
 
@@ -427,7 +419,7 @@ namespace AnimalObservations
                 //{
                 if (IsRecording)
                 {
-                    //TODO - Add try/catch - CreateWith() and Save() may throw exceptions
+                    //CreateWith()/Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
                     CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, _gpsConnection);
                     CurrentGpsPoint.Save();
                     CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
