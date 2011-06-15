@@ -106,7 +106,8 @@ namespace CSV_Export
                 "UTM8_EASTING,UTM8_NORTHING,SPEED,BEARING," +
                 "ANGLE,DISTANCE,BEHAVIOR,GROUP_SIZE,"+
                 "SPECIES,ON_TRANSECT,PROTOCOL_ID,GPS_STATUS,"+
-                "SATELLITES,HDOP,TRACK_LENGTH,COMMENTS");
+                "SATELLITES,HDOP,TRACK_LENGTH,COMMENTS,"+
+                "DATA_QUALITY,DATA_QUALITY_CODE");
 
             var lines = new List<Line>();
             var lengths = new Dictionary<string, Dictionary<string, double>>();
@@ -160,6 +161,7 @@ namespace CSV_Export
                     sb.AppendFormat("{0},{1},\"{2}\",{3},", row.Value[16], row.Value[17], row.Value[22], row.Value[23]);
                     sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",{3},", row.Value[24], row.Value[42], row.Value[41], row.Value[12]);
                     sb.AppendFormat("{0},{1},{2},\"{3}\"", row.Value[8], row.Value[7], transectLengths[transect], row.Value[25]);
+                    sb.Append(",,");
                     lines.Add(new Line { Date = localDateTime, Text = sb.ToString() });
                 }
             }
