@@ -274,5 +274,9 @@ namespace AnimalObservations
 
         #endregion
 
+        private void dockPanel_IsKeyboardFocusWithinChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+        {
+            Keyboard.Focus(angleTextBox);
+        }
     }
 }

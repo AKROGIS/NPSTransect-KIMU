@@ -7,7 +7,7 @@
     xmlns:local="clr-namespace:AnimalObservations"
     DataContext="{Binding RelativeSource={RelativeSource Self}}"
     >
-    <DockPanel LastChildFill="False">
+    <DockPanel Name="dockPanel" LastChildFill="False" FocusManager.IsFocusScope="True" IsKeyboardFocusWithinChanged="dockPanel_IsKeyboardFocusWithinChanged">
         <DockPanel.Resources>
             <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
             <Style TargetType="Label">
