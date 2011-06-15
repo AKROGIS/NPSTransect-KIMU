@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Text;
 
 namespace AnimalObservations
 {
@@ -17,12 +19,29 @@ namespace AnimalObservations
         Unidentified
     }
 
-    public class BirdGroup2
+    public class BirdGroup2 : IDataErrorInfo
     {
         //TODO - merge with BirdGroup (?? need a default constructor for Datagrid WPF/XAML interface)
 
         //public properties for WPF/XAML interface binding
         public int GroupSize { get; set; }
+        //public int GroupSize
+        //{
+        //    get
+        //    {
+        //        return _groupSize;
+        //    }
+        //    set
+        //    {
+        //        if (value <= 0)
+        //            throw new ArgumentOutOfRangeException("value", "GroupSize must be positive.");
+        //        if (value >= 100)
+        //            throw new ArgumentOutOfRangeException("value", "GroupSize must be less than 100.");
+        //        _groupSize = value;
+        //    }
+        //}
+        //private int _groupSize;
+
         public BirdGroupBehavior Behavior { get; set; }
         public BirdGroupSpecies Species { get; set; }
         public string Comment { get; set; }
@@ -207,5 +226,50 @@ namespace AnimalObservations
 
         private bool _previousCharacterWasDigit;
 
+        #region IDataErrorInfo Members
+
+        public string Error
+        {
+            get
+            {
+                var error = new StringBuilder();
+
+                // iterate over all of the properties
+                // of this object - aggregating any validation errors
+                PropertyDescriptorCollection props = TypeDescriptor.GetProperties(this);
+                foreach (PropertyDescriptor prop in props)
+                {
+                    string propertyError = this[prop.Name];
+                    if (propertyError != string.Empty)
+                    {
+                        error.Append((error.Length != 0 ? ", " : "") + propertyError);
+                    }
+                }
+                return error.ToString();
+            }
+        }
+
+        public string this[string columnName]
+        {
+            get
+            {
+                // apply property level validation rules
+                if (columnName == "Behavior")
+                {
+                    if (Behavior == BirdGroupBehavior.Pending)
+                        return "Behavior cannot be Pending";
+                }
+
+                if (columnName == "GroupSize")
+                {
+                    if (GroupSize <= 0 || GroupSize >= 100)
+                        return "GroupSize must be positive and less than 100";
+                }
+
+                return "";
+            }
+        }
+
+        #endregion
     }
 }

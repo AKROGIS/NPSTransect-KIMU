@@ -5,10 +5,21 @@
     xmlns:MobileClient="clr-namespace:ESRI.ArcGIS.Mobile.Client;assembly=ESRI.ArcGIS.Mobile.Client"
     xmlns:toolkit="http://schemas.microsoft.com/wpf/2008/toolkit"
     xmlns:local="clr-namespace:AnimalObservations"
+    xmlns:System="clr-namespace:System;assembly=mscorlib"
     DataContext="{Binding RelativeSource={RelativeSource Self}}"
     >
     <DockPanel Name="dockPanel" LastChildFill="False" FocusManager.IsFocusScope="True" IsKeyboardFocusWithinChanged="dockPanel_IsKeyboardFocusWithinChanged">
         <DockPanel.Resources>
+            <ObjectDataProvider MethodName="GetValues" ObjectType="{x:Type System:Enum}" x:Key="GetEnumBehavior">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="local:BirdGroupBehavior"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+            <ObjectDataProvider MethodName="GetValues" ObjectType="{x:Type System:Enum}" x:Key="GetEnumSpecies">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="local:BirdGroupSpecies"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
             <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
             <Style TargetType="Label">
                 <Setter Property="FontWeight" Value="Bold"/>
@@ -21,14 +32,19 @@
                 <Setter Property="FontSize" Value="14"/>
                 <Setter Property="Margin" Value="10"/>
             </Style>
+            <Style TargetType="toolkit:DataGrid">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Margin" Value="10"/>
+            </Style>
         </DockPanel.Resources>
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -38,7 +54,23 @@
             <Label Grid.Column="0" Grid.Row="2" Target="{Binding ElementName=dataGrid}" >_Bird Groups:</Label>
             <TextBox Grid.Column="1" Grid.Row="0" x:Name="angleTextBox" Text="{Binding Task.ActiveObservation.Angle, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" />
             <TextBox Grid.Column="1" Grid.Row="1" Name="distanceTextBox" Text="{Binding Task.ActiveObservation.Distance, Mode=TwoWay, NotifyOnValidationError=True, ValidatesOnExceptions=True}" />
-            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" toolkit:DataGridCell.Selected="dataGrid_Selected" />
+            <toolkit:DataGrid Grid.Column="1" Grid.Row="2" Name="dataGrid" ItemsSource="{Binding Task.ActiveObservation.BirdGroups}" AutoGenerateColumns="False">
+                <toolkit:DataGrid.Resources>
+                    <Style TargetType="ScrollBar">
+                        <Setter Property="Height" Value="18" />
+                    </Style>
+                </toolkit:DataGrid.Resources>
+                <toolkit:DataGrid.Columns>
+                    <toolkit:DataGridTextColumn Header="Group Size" Binding="{Binding GroupSize}"/>
+                    <toolkit:DataGridComboBoxColumn Header="Behavior" SelectedItemBinding="{Binding Behavior}" ItemsSource="{Binding Source={StaticResource GetEnumBehavior}}"/>
+                    <toolkit:DataGridComboBoxColumn Header="Species" SelectedItemBinding="{Binding Species}" ItemsSource="{Binding Source={StaticResource GetEnumSpecies}}"/>
+                    <toolkit:DataGridTextColumn Header="Comment" Binding="{Binding Comment}" MinWidth="500" />
+                </toolkit:DataGrid.Columns>
+                <toolkit:DataGrid.RowValidationRules>
+                    <local:RowDataInfoValidationRule ValidationStep="UpdatedValue" />
+                </toolkit:DataGrid.RowValidationRules>
+            </toolkit:DataGrid>
+            <Label Grid.Column="1" Grid.Row="3" Name="errorLabel" Margin="10"  FontStyle="Italic" FontSize="11" Foreground="Red" FontWeight="Normal"/>
         </Grid>
 
         <StackPanel x:Name="queueDisplay" HorizontalAlignment="Stretch"  DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">

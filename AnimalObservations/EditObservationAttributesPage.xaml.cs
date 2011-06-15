@@ -1,9 +1,13 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Text;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
-using Microsoft.Windows.Controls;
 
 namespace AnimalObservations
 {
@@ -146,10 +150,29 @@ namespace AnimalObservations
             //nullity check is required, because this override is called when the page is closing
             if (Task.ActiveObservation == null)
                 return false;
-            var angleError = (bool)angleTextBox.GetValue(Validation.HasErrorProperty);
-            var distanceError = (bool)distanceTextBox.GetValue(Validation.HasErrorProperty);
-            bool birdsError = Task.ActiveObservation.BirdGroups.Count < 1;
-            return !angleError && !distanceError && !birdsError;
+            string errorMessage = "";
+            // the Observation.Angle and Distance may be valid, but the UI value is not.
+            // there will only be a validation errors if Observation.Angle and Distance are valid
+            if (Validation.GetHasError(angleTextBox))
+                errorMessage += "Angle must be an integer between 0 and 360, inclusive.\n";
+            if (Validation.GetHasError(distanceTextBox))
+                errorMessage += "Distance must be a positive integer less than 500.\n";
+            errorMessage += Task.ActiveObservation.ValidateBeforeSave();
+            errorLabel.Content = errorMessage; 
+            return string.IsNullOrEmpty(errorMessage);
+
+
+            //var angleError = (bool)angleTextBox.GetValue(Validation.HasErrorProperty);
+            //if (angleError)
+            //    return false;
+            //var distanceError = (bool)distanceTextBox.GetValue(Validation.HasErrorProperty);
+            //if (distanceError)
+            //    return false;
+            //bool birdsError = Task.ActiveObservation.BirdGroups.Count < 1;
+            //if (birdsError)
+            //    return false;
+            //birdsError = Task.ActiveObservation.BirdGroups.Any(birdGroup => !birdGroup.IsValid);
+            //return !birdsError;
         }
 
         protected override void OnOkCommandExecute()
@@ -157,13 +180,12 @@ namespace AnimalObservations
             //Save and close the current observation attribute page
             //Transition to next in list, or if empty, previous page
 
-            string validationMessage = Task.ActiveObservation.ValidateBeforeSave();
-            if (!string.IsNullOrEmpty(validationMessage))
-            {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(validationMessage, "Incomplete Observation");
-                return;
-               
-            }
+            //string validationMessage = Task.ActiveObservation.ValidateBeforeSave();
+            //if (!string.IsNullOrEmpty(validationMessage))
+            //{
+            //    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(validationMessage, "Incomplete Observation");
+            //    return;
+            //}
 
             bool saved;
             try
@@ -279,16 +301,35 @@ namespace AnimalObservations
         {
             Keyboard.Focus(angleTextBox);
         }
-        
-        private void dataGrid_Selected(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (e.OriginalSource.GetType() == typeof(DataGridCell))
-            {
-                // Starts the Edit on the row;
-                DataGrid grd = (DataGrid)sender;
-                grd.BeginEdit(e);
-            }
-        }
+    }
 
+    public class RowDataInfoValidationRule : ValidationRule
+    {
+        public override ValidationResult Validate(object value,
+                        CultureInfo cultureInfo)
+        {
+            var group = (BindingGroup)value;
+
+            StringBuilder error = null;
+            foreach (var item in group.Items)
+            {
+                // aggregate errors
+                var info = item as IDataErrorInfo;
+                if (info != null)
+                {
+                    if (!string.IsNullOrEmpty(info.Error))
+                    {
+                        if (error == null)
+                            error = new StringBuilder();
+                        error.Append((error.Length != 0 ? ", " : "") + info.Error);
+                    }
+                }
+            }
+
+            if (error != null)
+                return new ValidationResult(false, error.ToString());
+
+            return ValidationResult.ValidResult;
+        }
     }
 }

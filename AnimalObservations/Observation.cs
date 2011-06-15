@@ -141,15 +141,17 @@ namespace AnimalObservations
         {
             string errors = "";
             if (Angle < 0)
-                errors = errors + "Angle cannot be less than zero.\n";
+                errors += "Angle must be a positive integer.\n";
             if (Angle > 360)
-                errors = errors + "Angle cannot be greater than 360.\n";
+                errors += "Angle cannot be greater than 360.\n";
             if (Distance <= 0)
-                errors = errors + "Distance must be positive.\n";
+                errors += "Distance must be a positive integer.\n";
             if (Distance > 500)
-                errors = errors + "Distance cannot be greater than 500m.\n";
+                errors += "Distance cannot be greater than 500m.\n";
             if (BirdGroups.Count < 1)
-                errors = errors + "Must have at least one bird group.";
+                errors += "Each observation must have at least one bird group.\n";
+            if (BirdGroups.Any(birdGroup => !birdGroup.IsValid))
+                errors += "All bird groups must be valid (Group size is a positive integer less than 100 and behavior is not pending).\n";
             return errors;
         }
 
