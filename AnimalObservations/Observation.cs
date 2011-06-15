@@ -1,5 +1,4 @@
 ﻿using System;
-//using System.Windows.Data;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -53,19 +52,13 @@ namespace AnimalObservations
         private int _distance;
 
         public ObservableCollection<BirdGroup2> BirdGroups { get; private set; }
-        //public ListCollectionView BirdGroups2 { get; private set; }
-
-        //private FeatureAttribute _angleAttribute;
-        //private FeatureAttribute _distanceAttribute;
 
         #region Constructors
 
         private Observation()
         {
-            BirdGroups = new ObservableCollection<BirdGroup2>();
-            //BirdGroups2 = new ListCollectionView(BirdGroups);
             //Create a default record to seed the datagrid, otherwise the datagrid shows no rows
-            BirdGroups.Add(new BirdGroup2());
+            BirdGroups = new ObservableCollection<BirdGroup2> { new BirdGroup2() };
         }
 
         //May return null if no feature is found with matching guid
@@ -138,8 +131,6 @@ namespace AnimalObservations
             if (Feature.FeatureDataRow["Distance"] is int)
                 Distance = (int)Feature.FeatureDataRow["Distance"];
 
-            //_angleAttribute = Feature.GetAttributes("Angle")[0];
-            //_distanceAttribute = Feature.GetAttributes("Distance")[0];
         }
 
         #endregion
@@ -149,13 +140,6 @@ namespace AnimalObservations
         internal string ValidateBeforeSave()
         {
             string errors = "";
-
-            //_angleAttribute.Value = Angle;
-            //errors = errors + _angleAttribute.ErrorMessage;
-            //_distanceAttribute.Value = Angle;
-            //errors = errors + _distanceAttribute.ErrorMessage;
-
-            
             if (Angle < 0)
                 errors = errors + "Angle cannot be less than zero.\n";
             if (Angle > 360)
