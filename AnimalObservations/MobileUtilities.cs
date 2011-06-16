@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BROKEN_WHERE_GUID
+
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -41,8 +43,36 @@ namespace AnimalObservations
 
         #region Get existing Features
 
-        //FIXME - Feature must be in an edit state to get the row.
-        //TODO - check to see what happens if we create a Feature from a feature data row already open for editing
+#if BROKEN_WHERE_GUID
+        //workaround for broken where clause on guid
+        internal static Feature GetFeature(FeatureLayer featureLayer, Guid guid, int columnIndex)
+        {
+            Trace.TraceInformation("feature layer: {0}; guid: {1}; column: {2}", featureLayer, guid, columnIndex);
+            FeatureDataTable table = featureLayer.GetDataTable(null);
+            Trace.TraceInformation("found: {0}; row count = {1}", table != null, table == null ? 0 : table.Rows.Count);
+            if (table == null)
+                return null;
+
+            var match = (from FeatureDataRow row in table.Rows
+                         where row[columnIndex] is Guid && (Guid)row[columnIndex] == guid
+                         select row).FirstOrDefault();
+
+            return (match == null) ? null : new Feature(match);
+        }
+
+        internal static IEnumerable<FeatureDataRow> GetFeatureRows(FeatureLayer featureLayer, Guid guid, int columnIndex)
+        {
+            Trace.TraceInformation("feature layer: {0}; guid: {1}; column: {2}", featureLayer, guid, columnIndex);
+            FeatureDataTable table = featureLayer.GetDataTable(null);
+            Trace.TraceInformation("found: {0}; row count = {1}", table != null, table == null ? 0 : table.Rows.Count);
+            if (table == null)
+                return null;
+
+            return from FeatureDataRow row in table.Rows
+                   where row[columnIndex] is Guid && (Guid)row[columnIndex] == guid
+                   select row;
+        }
+#endif
 
         internal static Feature GetFeature(FeatureLayer featureLayer, string whereClause)
         {
@@ -68,8 +98,12 @@ namespace AnimalObservations
 
         private static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, QueryFilter query)
         {
-            Trace.TraceInformation("feature layer {0}; query {1}", featureLayer, query);
+            Trace.TraceInformation("feature layer {0}; query {1} and {2} {3}", featureLayer, query.WhereClause, query.GeometricRelationship, query.Geometry);
+            //If query.WhereClause is invalid 'SQL' then invalid operation exception is thrown 'Operation is not valid due to the current state of the object.' message
             FeatureDataTable table = featureLayer.GetDataTable(query);
+            Trace.TraceInformation("found {0}; count {1}", table != null, table == null ? 0 : table.Rows.Count);
+            if (table == null)
+                return Enumerable.Empty<Feature>();
             return from FeatureDataRow row in table.Rows select new Feature(row);
             //return table.Rows.Cast<FeatureDataRow>().Select(row =>
             //{

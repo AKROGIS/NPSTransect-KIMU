@@ -133,7 +133,7 @@ namespace AnimalObservations
             //{
 #if TESTINGWITHOUTGPS
                 //Create a bogus GPS location
-                CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, _gpsConnection);
+                CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
                 //MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
                 MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
                 return (IsRecording = true);
@@ -421,7 +421,7 @@ namespace AnimalObservations
                 if (IsRecording)
                 {
                     //CreateWith()/Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
-                    CurrentGpsPoint = GpsPoint.CreateWith(CurrentTrackLog, _gpsConnection);
+                    CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
                     CurrentGpsPoint.Save();
                     CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
                     MostRecentLocation = CurrentGpsPoint.Location;
@@ -561,10 +561,10 @@ namespace AnimalObservations
                     return false;
                 }
                 //Initialize other classes
-                TrackLog trackLog = TrackLog.CreateWith(transect);
-                GpsPoint gpsPoint = GpsPoint.CreateWith(trackLog);
-                Observation observation = Observation.CreateWith(gpsPoint);
-                BirdGroup birdGroup = BirdGroup.CreateWith(observation);
+                TrackLog trackLog = TrackLog.FromTransect(transect);
+                GpsPoint gpsPoint = GpsPoint.FromTrackLog(trackLog);
+                Observation observation = Observation.FromGpsPoint(gpsPoint);
+                BirdGroup birdGroup = BirdGroup.FromObservation(observation);
                 //Unwind - destroy the temporary objects
                 birdGroup.Delete();
                 observation.Delete();

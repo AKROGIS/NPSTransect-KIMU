@@ -104,7 +104,7 @@ namespace AnimalObservations
         public bool Save(Observation observation)
         {
             if (DbLink == null)
-                DbLink = BirdGroup.CreateWith(observation);
+                DbLink = BirdGroup.FromObservation(observation);
             DbLink.Size = GroupSize;
             DbLink.Behavior = Behavior.ToString()[0];
             DbLink.Species = Species.ToString()[0];

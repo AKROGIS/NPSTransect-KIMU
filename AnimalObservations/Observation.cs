@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BROKEN_WHERE_GUID
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -66,21 +68,25 @@ namespace AnimalObservations
         {
             if (Observations.ContainsKey(guid))
                 return Observations[guid];
-
-            string whereClause = string.Format("ObservationID = {0}", guid);
-            Observation observation = CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+#if BROKEN_WHERE_GUID
+            int columnIndex = FeatureLayer.Columns.IndexOf("ObservationID");
+            Observation observation = FromFeature(MobileUtilities.GetFeature(FeatureLayer, guid, columnIndex));
+#else
+            string whereClause = string.Format("ObservationID = {{{0}}}", guid);
+            Observation observation = FromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+#endif
             if (observation != null && observation.GpsPoint == null)
                 throw new ApplicationException("Existing observation has no gps point");
             return observation;
         }
 
-        internal static Observation CreateWith(GpsPoint gpsPoint)
+        internal static Observation FromGpsPoint(GpsPoint gpsPoint)
         {
             if (gpsPoint == null)
                 throw new ArgumentNullException("gpsPoint");
 
             //May throw an exception, but should never return null
-            var observation = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var observation = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
             observation.GpsPoint = gpsPoint;
             return observation;
         }
@@ -91,22 +97,27 @@ namespace AnimalObservations
             if (extents == null)
                 throw new ArgumentNullException("extents");
 
-            Observation observation = Observations.Values.FirstOrDefault(obs => obs.Feature.FeatureDataRow.Geometry.Within(extents)) ??
-                                      CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
-            return observation;
+            return Observations.Values.FirstOrDefault(obs => obs.Feature.FeatureDataRow.Geometry.Within(extents)) ??
+                   FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
         }
 
-        private static Observation CreateFromFeature(Feature feature)
+        private static Observation FromFeature(Feature feature)
         {
             if (feature == null)
                 return null;
+            if (!feature.IsEditing)
+                feature.StartEditing();
             var observation = new Observation { Feature = feature };
-            observation.LoadAttributes();
+            bool existing = observation.LoadAttributes();
             Observations[observation.Guid] = observation;
+            //load birdgroups.  must becalled after updating Observations[], to avoid an infinite loop: obs->bird->obs->bird->...
+            if (existing)
+                observation.LoadBirdGroups();
+
             return observation;
         }
 
-        private void LoadAttributes()
+        private bool LoadAttributes()
         {
             bool existing = Feature.FeatureDataRow["ObservationID"] is Guid;
 
@@ -120,17 +131,20 @@ namespace AnimalObservations
             if (existing && Feature.FeatureDataRow["GPSPointID"] is Guid)
                 GpsPoint = GpsPoint.FromGuid((Guid) Feature.FeatureDataRow["GPSPointID"]);
 
-            //Load bird groups
-            if (existing)
-                foreach (var birdGroup in BirdGroup.AllWithObservation(this))
-                    BirdGroups.Add(new BirdGroup2(birdGroup));
-
             //Simple Attributes
             if (Feature.FeatureDataRow["Angle"] is int)
                 Angle = (int)Feature.FeatureDataRow["Angle"];
             if (Feature.FeatureDataRow["Distance"] is int)
                 Distance = (int)Feature.FeatureDataRow["Distance"];
 
+            return existing;
+        }
+
+        private void LoadBirdGroups()
+        {
+            BirdGroups.Clear();
+            foreach (var birdGroup in BirdGroup.AllWithObservation(this))
+                BirdGroups.Add(new BirdGroup2(birdGroup));
         }
 
         #endregion

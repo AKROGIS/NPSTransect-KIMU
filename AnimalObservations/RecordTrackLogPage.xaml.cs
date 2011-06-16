@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
+using MessageBox = ESRI.ArcGIS.Mobile.Client.Windows.MessageBox;
 
 namespace AnimalObservations
 {
@@ -86,13 +88,8 @@ namespace AnimalObservations
             //   therefore the actual point of observation is closer to the last GPS point
             //   than an interpolated point base on when this operation runs.
 
-            //FIXME - Task.CurrentGpsPoint may be null if this thread caught the main thread between states.
-            //It only happens on occasion, but enough to be annoying.
-            Debug.Assert(Task.CurrentGpsPoint != null, "Fail! Current GPS Point is null when recording an observation.");
-            if (Task.CurrentGpsPoint == null)
-                return;
-            //TODO - add try/catch - CreateWith() may throw exceptions
-            Observation observation = Observation.CreateWith(Task.CurrentGpsPoint);
+            // CreateWith() may throw exceptions, but that would be catastrophic, let the app handle it
+            Observation observation = Observation.FromGpsPoint(Task.CurrentGpsPoint);
             Task.AddObservationAsActive(observation);
             MobileApplication.Current.Transition(new EditObservationAttributesPage());
         }
@@ -103,8 +100,8 @@ namespace AnimalObservations
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            //get the location of the mouse down event for use by the mouse up event
-            //this method is NOT fired when The zoom in/out tool issues a mouse down
+            //get the location of the mouse down event for use by the MouseUp event
+            //this method is NOT fired when The zoom in/out tool issues a MouseDown event
             _mouseDownPoint = e.GetPosition(this);
             _myMouseDown = true;
             base.OnMouseDown(e);
@@ -117,12 +114,12 @@ namespace AnimalObservations
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            //this method IS fired when The zoom in/out tool issues a mouse up,
+            //this method is fired when The zoom in/out tool issues a MouseUp event,
             //so we need to ignore it if we did not initiate the mouse down.
             if (!_myMouseDown)
             {
-                base.OnMouseDown(e);
-                Trace.TraceInformation("Ignoring Mouse up for zoom in/out");
+                base.OnMouseUp(e);
+                Trace.TraceInformation("Ignoring MouseUp for zoom in/out");
                 return;
             }
             _myMouseDown = false;
@@ -134,7 +131,6 @@ namespace AnimalObservations
             int dy = Convert.ToInt32(mouseUpPoint.Y - _mouseDownPoint.Y);
             bool moved = (dx < -2 || 2 < dx || dy < -2 || 2 < dy);
 
-            // and not zooming in/out 
             if (moved)
             {
                 Trace.TraceInformation("Mouse up passed to pan");
@@ -149,50 +145,43 @@ namespace AnimalObservations
             if (observation != null)
             {
                 Trace.TraceInformation("Mouse up found observation");
-                Task.AddObservationAsActive(observation);
-                MobileApplication.Current.Transition(new EditObservationAttributesPage());
-                e.Handled = true;
+
+                MessageBoxResult messageBoxResult =  MessageBox.ShowDialog("Click Yes to delete this record; Click No to Edit", "Delete/Edit",
+                                                                           MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                if (messageBoxResult == MessageBoxResult.Yes)
+                {
+                    observation.Delete();
+                    e.Handled = true;
+                }
+                if (messageBoxResult == MessageBoxResult.No)
+                {
+                    Task.AddObservationAsActive(observation);
+                    MobileApplication.Current.Transition(new EditObservationAttributesPage());
+                    e.Handled = true;
+                }
                 return;
             }
             Trace.TraceInformation("Mouse up passed to base");
-            base.OnMouseDown(e);
+            base.OnMouseUp(e);
         }
 
         //May return null if no observation is found
         private static Observation GetObservation(System.Drawing.Point drawingPoint)
         {
+            //TODO - SearchRadius is in map units, should be pixels converted to map units
+
             Coordinate mapPoint = MobileApplication.Current.Map.ToMap(drawingPoint);
             var extents = new Envelope(mapPoint, MobileUtilities.SearchRadius * 2, MobileUtilities.SearchRadius * 2);
-            Observation observation = null;
-            try
-            {
-                //Try and find a bird group in this extent
-                BirdGroup birdGroup = null;
-                try
-                {
-                    birdGroup = BirdGroup.FromEnvelope(extents);
-                }
-                    //TODO - be more descriminating on exceptions, and re-throw where appropriate.
-                catch (Exception ex)
-                {
-                    Trace.TraceError("Caught and ignored exception {0}", ex.Message);
-                    //Allow birdGroup to default to null, i.e. no birdGroup found in extents
-                }
-                if (birdGroup != null)
-                    observation =  birdGroup.Observation;
 
-                //We did not find a birdgroup, so try and find an observation in this extent
-                //Check to see if it is in our cache, if not, then load from database
-                if (observation == null)
-                    observation = Observation.FromEnvelope(extents);
-            }
-                //TODO - be more descriminating on exceptions, and provide error message where appropriate.
-            catch (Exception ex)
-            {
-                Trace.TraceError("Caught and ignored exception {0}", ex.Message);
-                //Allow observation to default to null, i.e. no observation found in extents
-            }
-            return observation;
+            //Exceptions may get thrown by DB access in xx.FromEnvelope(), let the app handle them
+            Observation observation = null;
+            //Try and find a bird group in this extent
+            BirdGroup birdGroup = BirdGroup.FromEnvelope(extents);
+            if (birdGroup != null)
+                observation =  birdGroup.Observation;
+
+            //If we didn't get a birdgroup, search for observations in this extent
+            return observation ?? Observation.FromEnvelope(extents);
         }
 
         #endregion
@@ -235,7 +224,7 @@ namespace AnimalObservations
 
         private void beaufortComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.Beaufort = (int)beaufortComboBox.SelectedValue;
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
@@ -244,7 +233,7 @@ namespace AnimalObservations
 
         private void weatherComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.Weather = (int)weatherComboBox.SelectedValue;
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
@@ -253,16 +242,16 @@ namespace AnimalObservations
 
         private void visibilityComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.Visibility = (int)visibilityComboBox.SelectedValue;
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
             Task.StartRecording();
         }
 
-        private void onTransectCheckBox_Changed(object sender, System.Windows.RoutedEventArgs e)
+        private void onTransectCheckBox_Changed(object sender, RoutedEventArgs e)
         {
-            var newTracklog = TrackLog.CloneFrom(Task.CurrentTrackLog);
+            var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.OnTransect = onTransectCheckBox.IsChecked;
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;

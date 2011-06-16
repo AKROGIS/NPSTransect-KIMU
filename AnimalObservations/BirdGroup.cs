@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BROKEN_WHERE_GUID
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -39,20 +41,6 @@ namespace AnimalObservations
 
         #region Constructors
 
-        internal static IEnumerable<BirdGroup> AllWithObservation(Observation observation)
-        {
-            var results = new List<BirdGroup>();
-            //First get all the matching bird groups that have already been loaded
-            results.AddRange(BirdGroups.Values.Where(bird => bird.Observation == observation));
-
-            //Next search the database for matching birdgroups, but only load/add them if they are not already loaded.
-            string whereClause = string.Format("ObservationID = {0}", observation.Guid);
-            results.AddRange(from birdFeature in MobileUtilities.GetFeatures(FeatureLayer, whereClause)
-                             where !BirdGroups.ContainsKey(new Guid(birdFeature.FeatureDataRow.GlobalId.ToByteArray()))
-                             select FromFeature(birdFeature));
-            return results;
-        }
-
         //Class Constructor
         static BirdGroup()
         {
@@ -64,18 +52,40 @@ namespace AnimalObservations
         private BirdGroup()
         { }
 
+        internal static IEnumerable<BirdGroup> AllWithObservation(Observation observation)
+        {
+            var results = new List<BirdGroup>();
+            //First get all the matching bird groups that have already been loaded
+            results.AddRange(BirdGroups.Values.Where(bird => bird.Observation == observation));
+
+            //Next search the database for matching birdgroups, but only load/add them if they are not already loaded.
+#if BROKEN_WHERE_GUID
+            int columnIndex = FeatureLayer.Columns.IndexOf("ObservationID");
+            var rows = MobileUtilities.GetFeatureRows(FeatureLayer, observation.Guid, columnIndex);
+#else
+            string whereClause = string.Format("ObservationID = '{{{0}}}'", observation.Guid);
+            var rows = MobileUtilities.GetFeatureRows(FeatureLayer, whereClause)
+#endif
+            //We need to enable editing before we can check the 
+            //foreach (var feature in birds)
+            //    if (!feature.IsEditing)
+            //        feature.StartEditing();
+
+            results.AddRange(from birdFeature in rows
+                             where !BirdGroups.ContainsKey(new Guid(birdFeature.GlobalId.ToByteArray()))
+                             select FromFeature(new Feature(birdFeature)));
+            return results;
+        }
+
         //May return null if no feature is found within extents
         internal static BirdGroup FromEnvelope(Envelope extents)
         {
             //Check to see if it is in our cache, if not, then load from database
-            BirdGroup birdGroup = BirdGroups.Values.FirstOrDefault(birds => birds.Feature.FeatureDataRow.Geometry.Within(extents)) ??
-                                  FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
-            if (birdGroup != null && birdGroup.Observation == null)
-                throw new ApplicationException("Existing bird group has no observation");
-            return birdGroup;
+            return BirdGroups.Values.FirstOrDefault(birds => birds.Feature.FeatureDataRow.Geometry.Within(extents)) ??
+                   FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
         }
 
-        internal static BirdGroup CreateWith(Observation observation)
+        internal static BirdGroup FromObservation(Observation observation)
         {
             if (observation == null)
                 throw new ArgumentNullException("observation");
@@ -107,7 +117,7 @@ namespace AnimalObservations
             //For new features, ObservationID will be null, so we can't load an observation feature from the database
             //For new features, We will rely on the caller to set the Observation property
             if (Feature.FeatureDataRow["ObservationID"] is Guid)
-                Observation = Observation.FromGuid((Guid) Feature.FeatureDataRow["ObservationID"]);
+                Observation = Observation.FromGuid((Guid)Feature.FeatureDataRow["ObservationID"]);
 
             //Simple Attributes
             if (Feature.FeatureDataRow["GroupSize"] is int)

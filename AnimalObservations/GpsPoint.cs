@@ -1,5 +1,6 @@
 ﻿#define TESTINGWITHOUTGPS
 //#define GPSINANCHORAGE
+#define BROKEN_WHERE_GUID
 
 using System;
 using System.Collections.Generic;
@@ -42,14 +43,19 @@ namespace AnimalObservations
             if (GpsPoints.ContainsKey(guid))
                 return GpsPoints[guid];
 
-            string whereClause = string.Format("GpsPointID = {0}", guid);
-            GpsPoint gpsPoint = CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+#if BROKEN_WHERE_GUID
+            int columnIndex = FeatureLayer.Columns.IndexOf("GpsPointID");
+            GpsPoint gpsPoint = FromFeature(MobileUtilities.GetFeature(FeatureLayer, guid, columnIndex));
+#else
+            string whereClause = string.Format("GpsPointID = {{{0}}}", guid);
+            GpsPoint gpsPoint = FromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+#endif
             if (gpsPoint != null && gpsPoint.TrackLog == null)
                 throw new ApplicationException("Existing gps point has no track log");
             return gpsPoint;
         }
 
-        internal static GpsPoint CreateWith(TrackLog trackLog, GpsConnection gpsConnection)
+        internal static GpsPoint FromGpsConnection(TrackLog trackLog, GpsConnection gpsConnection)
         {
             if (trackLog == null)
                 throw new ArgumentNullException("trackLog");
@@ -60,28 +66,30 @@ namespace AnimalObservations
                 throw new InvalidOperationException("GPS connection is closed");
 #endif
             //May throw an exception, but should never return null
-            var gpsPoint = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var gpsPoint = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
             gpsPoint.TrackLog = trackLog;
             gpsPoint.LoadAttributes(gpsConnection);
             return gpsPoint;
         }
 
         //ONLY USE FOR TESTING THE DB SCHEMA!  RESULTING OBJECT WILL NOT HAVE VALID PROPERTY VALUES!
-        internal static GpsPoint CreateWith(TrackLog trackLog)
+        internal static GpsPoint FromTrackLog(TrackLog trackLog)
         {
             if (trackLog == null)
                 throw new ArgumentNullException("trackLog");
 
             //May throw an exception, but should never return null
-            var gpsPoint = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var gpsPoint = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
             gpsPoint.TrackLog = trackLog;
             return gpsPoint;
         }
 
-        private static GpsPoint CreateFromFeature(Feature feature)
+        private static GpsPoint FromFeature(Feature feature)
         {
             if (feature == null)
                 return null;
+            if (!feature.IsEditing)
+                feature.StartEditing();
             var gpsPoint = new GpsPoint { Feature = feature };
             gpsPoint.LoadAttributes();
             GpsPoints[gpsPoint.Guid] = gpsPoint;

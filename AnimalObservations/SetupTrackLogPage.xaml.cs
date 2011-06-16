@@ -65,13 +65,13 @@ namespace AnimalObservations
             {
                 //TrackLog.CreateWith() may throw an exception.  If it does, there is no way to recover.
                 //Let the exception invoke default behavior - alert user, write error log and exit app.
-                Task.CurrentTrackLog = TrackLog.CreateWith(nearestTransect);
+                Task.CurrentTrackLog = TrackLog.FromTransect(nearestTransect);
             }
             else
             {
                 //TrackLog.CloneFrom() may throw an exception.  If it does, there is no way to recover.
                 //Let the exception invoke default behavior - alert user, write error log and exit app.
-                TrackLog newTracklog = TrackLog.CloneFrom(Task.DefaultTrackLog);
+                TrackLog newTracklog = TrackLog.FromTrackLog(Task.DefaultTrackLog);
                 //make sure the transect is one of those available in the combobox
                 newTracklog.Transect = nearestTransect;
                 Task.CurrentTrackLog = newTracklog;

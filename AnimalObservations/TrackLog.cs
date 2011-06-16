@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BROKEN_WHERE_GUID
+
+using System;
 using System.Collections.Generic;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
@@ -54,38 +56,45 @@ namespace AnimalObservations
             if (TrackLogs.ContainsKey(guid))
                 return TrackLogs[guid];
 
-            string whereClause = string.Format("TrackID = {0}", guid);
-            TrackLog trackLog = CreateFromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+#if BROKEN_WHERE_GUID
+            int columnIndex = FeatureLayer.Columns.IndexOf("TrackID");
+            TrackLog trackLog = FromFeature(MobileUtilities.GetFeature(FeatureLayer, guid, columnIndex));
+#else
+            string whereClause = string.Format("TrackID = '{{{0}}}'", guid);
+            TrackLog trackLog = FromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+#endif
             if (trackLog != null && trackLog.Transect == null)
                 throw new ApplicationException("Existing track log has no transect");
             return trackLog;
         }
 
-        internal static TrackLog CreateWith(Transect transect)
+        internal static TrackLog FromTransect(Transect transect)
         {
             if (transect == null)
                 throw new ArgumentNullException("transect");
 
             //May throw an exception, but should never return null
-            var trackLog = CreateFromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var trackLog = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
             trackLog.Transect = transect;
             return trackLog;
         }
 
-        internal static TrackLog CloneFrom(TrackLog oldTrackLog)
+        internal static TrackLog FromTrackLog(TrackLog oldTrackLog)
         {
             if (oldTrackLog == null)
                 throw new ArgumentNullException("oldTrackLog");
 
-            TrackLog trackLog = CreateWith(oldTrackLog.Transect);
+            TrackLog trackLog = FromTransect(oldTrackLog.Transect);
             trackLog.LoadAttributes(oldTrackLog);
             return trackLog;
         }
 
-        private static TrackLog CreateFromFeature(Feature feature)
+        private static TrackLog FromFeature(Feature feature)
         {
             if (feature == null)
                 return null;
+            if (!feature.IsEditing)
+                feature.StartEditing();
             feature.Geometry = new Polyline();
             var trackLog = new TrackLog { Feature = feature };
             trackLog.LoadAttributes();

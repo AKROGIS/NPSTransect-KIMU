@@ -139,7 +139,7 @@ namespace AnimalObservations
 
             //CreateWith() may throw exceptions, but that would be catastrophic, so let the app handle it.
             //Only use one of the following based on prefered behavior
-            Task.AddObservationAsActive(Observation.CreateWith(Task.CurrentGpsPoint));
+            Task.AddObservationAsActive(Observation.FromGpsPoint(Task.CurrentGpsPoint));
             //Task.AddObservationAsInactive(Observation.CreateWith(Task.CurrentGpsPoint));
             //If the new observation is the active observation, set focus on Angle Box; don't change focus if AddObservationAsInactive
             Keyboard.Focus(angleTextBox);
