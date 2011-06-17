@@ -168,10 +168,11 @@ namespace AnimalObservations
         //May return null if no observation is found
         private static Observation GetObservation(System.Drawing.Point drawingPoint)
         {
-            //TODO - SearchRadius is in map units, should be pixels converted to map units
-
+            //offset for track log information banner (map should do this.  ESRI error??)
+            drawingPoint.Y = drawingPoint.Y - 32;
             Coordinate mapPoint = MobileApplication.Current.Map.ToMap(drawingPoint);
-            var extents = new Envelope(mapPoint, MobileUtilities.SearchRadius * 2, MobileUtilities.SearchRadius * 2);
+            double sideLength = 2 * MobileUtilities.SearchRadius * MobileApplication.Current.Map.Scale / 1000;
+            var extents = new Envelope(mapPoint, sideLength, sideLength);
 
             //Exceptions may get thrown by DB access in xx.FromEnvelope(), let the app handle them
             Observation observation = null;

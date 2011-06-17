@@ -14,7 +14,7 @@ namespace AnimalObservations
 {
     class MobileUtilities
     {
-        internal const int SearchRadius = 10;
+        internal const int SearchRadius = 2; //mm in display units (based on map scale) on each side of cursor point to search
 
         internal static FeatureLayer GetFeatureLayer(string featureLayerName)
         {

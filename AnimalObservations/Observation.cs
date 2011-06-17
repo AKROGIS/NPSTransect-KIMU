@@ -191,7 +191,12 @@ namespace AnimalObservations
         internal void Delete()
         {
             Observations.Remove(Guid);
-            Feature.Delete(); //Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
+
+            //per docs: Feature.Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
+            //However this does not work.  However Feature.FeatureDataRow.Delete() does work.
+            //Feature.Delete(); 
+            Feature.FeatureDataRow.Delete();
+            Feature.SaveEdits();
             foreach (BirdGroup2 bird in BirdGroups)
                 bird.Delete();
         }
