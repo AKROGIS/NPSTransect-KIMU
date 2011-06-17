@@ -76,7 +76,7 @@ namespace AnimalObservations
                 return;
             }
 #if TESTINGWITHOUTGPS
-            ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Program is operating in Test mode.", "No GPS Fix");
+            ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Program is operating without a GPS.", "Test Mode");
 #else
             //Not used in production code - testing workaround  Also see StartRecording()
             if (!_gpsConnection.IsOpen || MostRecentLocation == null)

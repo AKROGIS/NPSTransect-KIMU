@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
-using MessageBox = ESRI.ArcGIS.Mobile.Client.Windows.MessageBox;
 
 namespace AnimalObservations
 {
@@ -144,24 +143,27 @@ namespace AnimalObservations
             Observation observation = GetObservation(drawingPoint);
             if (observation != null)
             {
-                Trace.TraceInformation("Mouse up found observation");
+                //Trace.TraceInformation("Mouse up found observation");
 
-                MessageBoxResult messageBoxResult =  MessageBox.ShowDialog("Click Yes to delete this record; Click No to Edit", "Delete/Edit",
-                                                                           MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-                if (messageBoxResult == MessageBoxResult.Yes)
+                var dlg = new SelectionDialog();
+                dlg.ShowDialog();
+
+                if (dlg.Action == SelectionAction.Delete)
                 {
+                    //Trace.TraceInformation("Delete");
                     observation.Delete();
                     e.Handled = true;
                 }
-                if (messageBoxResult == MessageBoxResult.No)
+                if (dlg.Action == SelectionAction.Edit)
                 {
+                    //Trace.TraceInformation("Edit");
                     Task.AddObservationAsActive(observation);
                     MobileApplication.Current.Transition(new EditObservationAttributesPage());
                     e.Handled = true;
                 }
                 return;
             }
-            Trace.TraceInformation("Mouse up passed to base");
+            //Trace.TraceInformation("Mouse up passed to base");
             base.OnMouseUp(e);
         }
 
