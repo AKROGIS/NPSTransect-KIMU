@@ -75,6 +75,14 @@ namespace AnimalObservations
             MobileApplication.Current.Transition(PreviousPage);
         }
 
+        protected override bool CanExecuteOkCommand()
+        {
+            //nullity check is required because this override is called after OnCancelCommandExecute()
+            if (Task.CurrentTrackLog == null)
+                return false;
+            return Task.CurrentTrackLog.OnTransect.GetValueOrDefault();
+        }
+
         protected override void OnOkCommandExecute()
         {
             //Log observation point and open observation attribute page
