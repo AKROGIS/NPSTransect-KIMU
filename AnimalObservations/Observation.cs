@@ -154,6 +154,10 @@ namespace AnimalObservations
         internal string ValidateBeforeSave()
         {
             string errors = "";
+            if (!Feature.HasValidGeometry)
+                errors += "Geometry is invalid.\n";
+            if (!Feature.HasValidAttributes)
+                errors += "One or more attributes are invalid.\n";
             if (Angle < 0)
                 errors += "Angle must be a positive integer.\n";
             if (Angle > 360)

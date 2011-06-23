@@ -16,14 +16,14 @@ namespace CSV_Export
 
         private struct Line : IComparable
         {
-            public DateTime Date { get; set; }
-            public string Text { get; set; }
+            internal DateTime Date { private get; set; }
+            internal string Text { get; set; }
 
 
             public int CompareTo(object obj)
             {
                 var other = (Line)obj;
-                return this.Date.CompareTo(other.Date);
+                return Date.CompareTo(other.Date);
             }
         }
 
@@ -58,10 +58,10 @@ namespace CSV_Export
         internal void WriteTable(StreamWriter tw, IFeatureWorkspace workspace, string dateWhereClause)
         {
             //Get the Featureclasses
-            IFeatureClass gpsFC = workspace.OpenFeatureClass("GpsPoints");
-            IFeatureClass obsFC = workspace.OpenFeatureClass("Observations");
-            IFeatureClass bgFC = workspace.OpenFeatureClass("BirdGroups");
-            IFeatureClass trkFC = workspace.OpenFeatureClass("Tracks");
+            IFeatureClass gpsPoints = workspace.OpenFeatureClass("GpsPoints");
+            IFeatureClass observations = workspace.OpenFeatureClass("Observations");
+            IFeatureClass birdGroups = workspace.OpenFeatureClass("BirdGroups");
+            IFeatureClass tracks = workspace.OpenFeatureClass("Tracks");
 
             // Get the Relationship Class Factory
             Type memRelClassFactoryType = Type.GetTypeFromProgID("esriGeodatabase.MemoryRelationshipClassFactory");
@@ -74,29 +74,28 @@ namespace CSV_Export
             //Must create the relationship class in memory (don't load from fgdb), else NO outer join.
             //IRelationshipClass rc = featureWorkspace.OpenRelationshipClass("GpsPoint_Observation");
 
-            IRelationshipClass rc1 = memRelClassFactory.Open("Obs_Gps",
-                obsFC, "GpsPointID", gpsFC, "GpsPointID",
+            IRelationshipClass relationship1 = memRelClassFactory.Open("Obs_Gps",
+                observations, "GpsPointID", gpsPoints, "GpsPointID",
                 "", "", esriRelCardinality.esriRelCardinalityOneToOne);
 
             //Last parameter must be true to get outer join, last parameter must be true to get sorting.
-            var table1 = (ITable)rqtFactory.Open(rc1, false, null, null, String.Empty, false, true);
+            var table1 = (ITable)rqtFactory.Open(relationship1, false, null, null, String.Empty, false, true);
 
-            IRelationshipClass rc2 = memRelClassFactory.Open("BG_Obs_Gps",
-                bgFC, "ObservationID", (IObjectClass)table1, "Observations.ObservationID",
+            IRelationshipClass relationship2 = memRelClassFactory.Open("BG_Obs_Gps",
+                birdGroups, "ObservationID", (IObjectClass)table1, "Observations.ObservationID",
                 String.Empty, String.Empty, esriRelCardinality.esriRelCardinalityOneToOne);
 
-            var table2 = (ITable)rqtFactory.Open(rc2, false, null, null, String.Empty, false, true);
+            var table2 = (ITable)rqtFactory.Open(relationship2, false, null, null, String.Empty, false, true);
 
-            IRelationshipClass rc3 = memRelClassFactory.Open("Track_BG_Obs_Gps",
-                trkFC, "TrackID", (IObjectClass)table2, "GpsPoints.TrackID",
+            IRelationshipClass relationship3 = memRelClassFactory.Open("Track_BG_Obs_Gps",
+                tracks, "TrackID", (IObjectClass)table2, "GpsPoints.TrackID",
                 String.Empty, String.Empty, esriRelCardinality.esriRelCardinalityOneToOne);
 
-            var table3 = (ITable)rqtFactory.Open(rc3, false, null, null, String.Empty, false, true);
+            var table3 = (ITable)rqtFactory.Open(relationship3, false, null, null, String.Empty, false, true);
 
 
             //query must have a where clause or else the postfix will be ignored
-            var query = new QueryFilter();
-            query.WhereClause = dateWhereClause;
+            var query = new QueryFilter {WhereClause = dateWhereClause};
             ((IQueryFilterDefinition)query).PostfixClause = "ORDER BY GpsPoints.Time_local";
 
             tw.WriteLine(

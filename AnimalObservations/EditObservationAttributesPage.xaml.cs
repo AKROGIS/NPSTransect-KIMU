@@ -1,8 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -71,52 +69,43 @@ namespace AnimalObservations
         private void InitializeData()
         {
             Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            Debug.Assert(Task != null,
-                "Fail!, Task is null in EditObservationAttributesPage");
-            Debug.Assert(Task.ActiveObservation != null,
-                "Fail!, Task.ActiveObservation is null in EditObservationAttributesPage");
-            //FIXME - prove the above assertions are true for valid code and any data/userinput or add error checking
-
-            //TODO: Consider using the feature attributes for handy property binding to tooltip, validation, etc.
-            //FeatureAttribute Angle = Task.ActiveObservation.Feature.GetEditableAttributes()[0];
-
         }
 
         #endregion
 
-        #region Defining Bird Groups
+        //#region Defining Bird Groups
 
-        private BirdGroup2 _birdGroupInProgress = new BirdGroup2();
+        //private BirdGroup2 _birdGroupInProgress = new BirdGroup2();
 
-        private void DefineBirdGroup(KeyEventArgs e)
-        {
-            string keyString = (new KeyConverter()).ConvertToString(e.Key);
-            if (string.IsNullOrEmpty(keyString))
-                return;
-            if (e.KeyboardDevice.Modifiers != ModifierKeys.None)
-                return;
-            Char keyChar = keyString[0];
-            if (BirdGroup2.RecognizeKey(keyChar) && _birdGroupInProgress.AcceptKey(keyChar))
-            {
-                if (_birdGroupInProgress.IsComplete)
-                    CompleteBirdGroup();
-            }
-            else
-            {
-                if (_birdGroupInProgress.IsValid)
-                    CompleteBirdGroup();
-                else
-                    _birdGroupInProgress.Reset();
-            }
-        }
+        //private void DefineBirdGroup(KeyEventArgs e)
+        //{
+        //    string keyString = (new KeyConverter()).ConvertToString(e.Key);
+        //    if (string.IsNullOrEmpty(keyString))
+        //        return;
+        //    if (e.KeyboardDevice.Modifiers != ModifierKeys.None)
+        //        return;
+        //    Char keyChar = keyString[0];
+        //    if (BirdGroup2.RecognizeKey(keyChar) && _birdGroupInProgress.AcceptKey(keyChar))
+        //    {
+        //        if (_birdGroupInProgress.IsComplete)
+        //            CompleteBirdGroup();
+        //    }
+        //    else
+        //    {
+        //        if (_birdGroupInProgress.IsValid)
+        //            CompleteBirdGroup();
+        //        else
+        //            _birdGroupInProgress.Reset();
+        //    }
+        //}
 
-        private void CompleteBirdGroup()
-        {
-            Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
-            _birdGroupInProgress = new BirdGroup2();
-        }
+        //private void CompleteBirdGroup()
+        //{
+        //    Task.ActiveObservation.BirdGroups.Add(_birdGroupInProgress);
+        //    _birdGroupInProgress = new BirdGroup2();
+        //}
 
-        #endregion
+        //#endregion
 
         #region Page navigation overrides
 
@@ -125,9 +114,6 @@ namespace AnimalObservations
             //Discard this observation (if existing, abandon changes; if new, delete new (unsaved) feature)
             //Transition to next in list, or if empty, previous page
 
-            //FIXME - Are we editing an existing observation - discard changes, but do not delete observation
-            //FIXME - if we are creating a new observation - delete newly create record.
-            //FIXME - if the observation has been saved (during creation?) then it should be deleted
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
                 MobileApplication.Current.Transition(PreviousPage);
@@ -147,7 +133,7 @@ namespace AnimalObservations
 
         protected override bool CanExecuteOkCommand()
         {
-            //nullity check is required, because this override is called when the page is closing
+            //nullity check is required because this override is called when the page is closing
             if (Task.ActiveObservation == null)
                 return false;
             string errorMessage = "";
@@ -160,19 +146,6 @@ namespace AnimalObservations
             errorMessage += Task.ActiveObservation.ValidateBeforeSave();
             errorLabel.Content = errorMessage; 
             return string.IsNullOrEmpty(errorMessage);
-
-
-            //var angleError = (bool)angleTextBox.GetValue(Validation.HasErrorProperty);
-            //if (angleError)
-            //    return false;
-            //var distanceError = (bool)distanceTextBox.GetValue(Validation.HasErrorProperty);
-            //if (distanceError)
-            //    return false;
-            //bool birdsError = Task.ActiveObservation.BirdGroups.Count < 1;
-            //if (birdsError)
-            //    return false;
-            //birdsError = Task.ActiveObservation.BirdGroups.Any(birdGroup => !birdGroup.IsValid);
-            //return !birdsError;
         }
 
         protected override void OnOkCommandExecute()
@@ -180,24 +153,8 @@ namespace AnimalObservations
             //Save and close the current observation attribute page
             //Transition to next in list, or if empty, previous page
 
-            //string validationMessage = Task.ActiveObservation.ValidateBeforeSave();
-            //if (!string.IsNullOrEmpty(validationMessage))
-            //{
-            //    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(validationMessage, "Incomplete Observation");
-            //    return;
-            //}
-
-            bool saved;
-            try
-            {
-                saved = Task.ActiveObservation.Save();
-            }
-            catch (Exception ex)
-            {
-                //TODO provide better options to user on how to proceed if save failed
-                Trace.TraceError("Error saving observation/bird groups. " + ex);
-                saved = false;
-            }
+            //If saving throws an exception, it is catastrophic, so let the app handle it
+            bool saved = Task.ActiveObservation.Save();
             if (saved)
             {
                 Task.RemoveObservation(Task.ActiveObservation);
@@ -208,7 +165,10 @@ namespace AnimalObservations
             }
             else
             {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving observation/bird groups", "Save Failed");
+                string msg = Task.ActiveObservation.ValidateBeforeSave();
+                if (string.IsNullOrEmpty(msg))
+                    msg = "One or more bird groups are invalid.";
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(msg, "Save Failed");
             }
         }
 
@@ -278,17 +238,6 @@ namespace AnimalObservations
             //    e.Handled = true;
             //    DefineBirdGroup(e);
             //    return;
-            //}
-
-            //FIXME capture the delete event in the data grid to properly dispose of the birdgroup. 
-            //private void RemoveButton_Click(object sender, RoutedEventArgs e)
-            //{
-            //    if (gridView.SelectedIndex != -1)
-            //    {
-            //        BirdGroup2 bird = Task.ActiveObservation.BirdGroups[gridView.SelectedIndex];
-            //        Task.ActiveObservation.BirdGroups.RemoveAt(gridView.SelectedIndex);
-            //        bird.Delete();
-            //    }
             //}
 
             base.OnKeyDown(e);

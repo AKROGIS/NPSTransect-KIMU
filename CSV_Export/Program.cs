@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using Mono.Options;
 
@@ -11,16 +10,15 @@ namespace CSV_Export
         static void Main(string[] args)
         {
 
-            bool show_help = false;
+            bool showHelp = false;
             //string layerFile = "C:\\KIMU\\CSV_Export.lyr";
-            string fgdb = "C:\\KIMU\\murrelets.gdb";
-            string outDir = "C:\\KIMU\\CSV";
+            const string fgdb = "C:\\KIMU\\murrelets.gdb";
+            const string outDir = "C:\\KIMU\\CSV";
+            const string defaultInFile = fgdb;
+
             string infile = null;
             string outfile = null;
-            string defaultInFile = fgdb;
             int defaultYear = DateTime.Today.Year;
-
-            //FIXME - outfile should be a directory, and file name is dynamic.
 
             var p = new OptionSet
                         {
@@ -39,7 +37,7 @@ namespace CSV_Export
 			                  v => { if (v != null) ++_verbosity; } 
                             },
 			                { "h|help",  "Show this message and exit", 
-			                  v => show_help = v != null
+			                  v => showHelp = v != null
                             },
 		                };
 
@@ -76,7 +74,7 @@ namespace CSV_Export
                 return;
             }
 
-            if (show_help)
+            if (showHelp)
             {
                 p.WriteOptionDescriptions(Console.Out);
                 return;

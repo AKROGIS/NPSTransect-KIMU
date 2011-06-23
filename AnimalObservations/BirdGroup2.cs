@@ -132,6 +132,8 @@ namespace AnimalObservations
             }
         }
 
+        //TODO - remove this key code stuff
+
         public void Reset()
         {
             GroupSize = default(int);
