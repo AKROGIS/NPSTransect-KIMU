@@ -1,5 +1,5 @@
-﻿#define TESTINGWITHOUTGPS
-//#define GPSINANCHORAGE
+﻿//#define TESTINGWITHOUTGPS
+#define GPSINANCHORAGE
 
 using System;
 using System.Collections.ObjectModel;
