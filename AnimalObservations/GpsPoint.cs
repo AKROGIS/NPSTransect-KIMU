@@ -1,5 +1,6 @@
 ﻿//#define TESTINGWITHOUTGPS
 #define GPSINANCHORAGE
+//#define GPSINJUNEAU
 #define BROKEN_WHERE_GUID
 
 using System;
@@ -151,6 +152,11 @@ namespace AnimalObservations
             //Offset Regan's office to end of Transect MainBay19
             Latitude -= (61.217311111 - 58.495580); //2.7618;
             Longitude += (149.885638889 - 135.964885); //13.9988;
+            Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
+#elif GPSINJUNEAU
+            //Offset SEAN Juneau office to end of Transect MainBay19
+            Latitude -= (58.377663888 - 58.495580);
+            Longitude += (134.69872777 - 135.964885);
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 #else
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);

@@ -1,5 +1,6 @@
 ﻿//#define TESTINGWITHOUTGPS
 #define GPSINANCHORAGE
+//#define GPSINJUNEAU
 
 using System;
 using System.Collections.ObjectModel;
@@ -434,6 +435,10 @@ namespace AnimalObservations
                     //Offset Regan's office to end of Transect MainBay19
                     latitude -= (61.217311111 - 58.495580);
                     longitude += (149.885638889 - 135.964885);
+#elif GPSINJUNEAU
+                    //Offset SEAN Juneau office to end of Transect MainBay19
+                    latitude -= (58.377663888 - 58.495580);
+                    longitude += (134.69872777 - 135.964885);
 #endif
                     MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
                 }
