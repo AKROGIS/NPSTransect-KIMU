@@ -7,31 +7,31 @@ namespace CSV_Export
 {
     class Program
     {
+        static int _verbosity;
+
         static void Main(string[] args)
         {
 
             bool showHelp = false;
-            //string layerFile = "C:\\KIMU\\CSV_Export.lyr";
-            const string fgdb = "C:\\KIMU\\murrelets.gdb";
-            const string outDir = "C:\\KIMU\\CSV";
-            const string defaultInFile = fgdb;
+            const string defaultOutDir = "C:\\KIMU\\CSV";
+            const string defaultInFile = "C:\\KIMU\\murrelets.gdb";
 
-            string infile = null;
-            string outfile = null;
-            int defaultYear = DateTime.Today.Year;
+            string inFile = null;
+            string outFile = null;
+            int year = DateTime.Today.Year;
 
-            var p = new OptionSet
+            var commandOptions = new OptionSet
                         {
 			                "Usage: exportCSV [OPTIONS]+ year",
 			                "Read ArcGIS data of a given year and create a CSV file",
 			                "If year is not specified, the current year is used.",
 			                "",
 			                "Options:",
-			                { "i|in=", "The layerfile/geodatabase to use.  Default is C:\\KIMU\\murrelets.gdb",
-			                  v => { if (v != null) infile = v; }
+			                { "i|in=", "The file geodatabase to use.  Default is " + defaultInFile,
+			                  v => { if (v != null) inFile = v; }
                             },
-			                { "o|out=", "The name of the CSV file to create.  Default is C:\\KIMU\\CSV\\[year].csv.",
-			                  v => { if (v != null) outfile = v; }
+			                { "o|out=", "The name of the CSV file to create.  Default is " + defaultOutDir + "[year].csv.",
+			                  v => { if (v != null) outFile = v; }
                             },
 			                { "v|verbose", "Increase debug message verbosity",
 			                  v => { if (v != null) ++_verbosity; } 
@@ -41,22 +41,32 @@ namespace CSV_Export
                             },
 		                };
 
-            List<string> extra;
+            List<string> commandArguments;
             try
             {
-                extra = p.Parse(args);
+                commandArguments = commandOptions.Parse(args);
             }
-            catch (OptionException e)
+            catch (OptionException ex)
             {
-                Error(e.Message);
+                Error(ex.Message);
                 return;
             }
 
-            int year = defaultYear;
-
-            if (extra.Count == 1)
+            if (commandArguments.Count > 1)
             {
-                if (!int.TryParse(extra[0], out year))
+                Error("Only one year may be specified.  {0} provided.", commandArguments.Count);
+                return;
+            }
+
+            if (showHelp)
+            {
+                commandOptions.WriteOptionDescriptions(Console.Out);
+                return;
+            }
+
+            if (commandArguments.Count == 1)
+            {
+                if (!int.TryParse(commandArguments[0], out year))
                 {
                     Error("Year is not an integer.");
                     return;
@@ -68,50 +78,37 @@ namespace CSV_Export
                 }
             }
 
-            if (extra.Count > 1)
+            if (string.IsNullOrEmpty(inFile))
+                inFile = defaultInFile;
+
+            if (!Directory.Exists(inFile))
             {
-                Error("Only one year may be specified.  {0} provided.", extra.Count);
+                Error("Error: File Geodatabase Not found = {0}", inFile);
                 return;
             }
 
-            if (showHelp)
-            {
-                p.WriteOptionDescriptions(Console.Out);
-                return;
-            }
+            if (string.IsNullOrEmpty(outFile))
+                outFile = Path.Combine(defaultOutDir, year + ".csv");
 
-            if (string.IsNullOrEmpty(infile))
-                infile = defaultInFile;
-
-            if (!Directory.Exists(infile))
-            {
-                Error("Error: Geodatabase Not found = {0}", infile);
-                return;
-            }
-
-            string defaultOutfile = Path.Combine(outDir, year + ".csv");
-            if (string.IsNullOrEmpty(outfile))
-                outfile = defaultOutfile;
-
-            string directory = Path.GetDirectoryName(outfile);
+            string directory = Path.GetDirectoryName(outFile);
             if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
             {
-                Error("Error: directory for output ({0}) does not exist.", outfile);
+                Error("Error: directory for output ({0}) does not exist.", outFile);
                 return;
             }
 
             Debug("Processing Year = {0}", year);
-            Debug("Reading = {0}", infile);
-            Debug("Writing = {0}", outfile);
+            Debug("Reading = {0}", inFile);
+            Debug("Writing = {0}", outFile);
 
             try
             {
-                using (var output = new FileStream(outfile, FileMode.Create))
+                using (var output = new FileStream(outFile, FileMode.Create))
                 {
                     var translator = new Translator
                                          {
                                              Year = year,
-                                             WorkspacePath = infile,
+                                             WorkspacePath = inFile,
                                              Output = output,
                                          };
                     translator.Translate();
@@ -124,15 +121,11 @@ namespace CSV_Export
             }
         }
 
-        static int _verbosity;
-
         static void Debug(string format, params object[] args)
         {
-            if (_verbosity > 0)
-            {
-                Console.Write("# ");
-                Console.WriteLine(format, args);
-            }
+            if (_verbosity <= 0) return;
+            Console.Write("# ");
+            Console.WriteLine(format, args);
         }
 
         static void Error(string format, params object[] args)
