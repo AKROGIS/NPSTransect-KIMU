@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -143,7 +144,8 @@ namespace AnimalObservations
                 errorMessage += "Angle must be an integer between 0 and 360, inclusive.\n";
             if (Validation.GetHasError(distanceTextBox))
                 errorMessage += "Distance must be a positive integer less than 500.\n";
-            errorMessage += Task.ActiveObservation.ValidateBeforeSave();
+            Task.ActiveObservation.ValidateBeforeSave(); //Has a side effect of updating the ErrorMessage property
+            errorMessage += Task.ActiveObservation.Error;
             errorLabel.Content = errorMessage; 
             return string.IsNullOrEmpty(errorMessage);
         }
@@ -165,10 +167,14 @@ namespace AnimalObservations
             }
             else
             {
-                string msg = Task.ActiveObservation.ValidateBeforeSave();
-                if (string.IsNullOrEmpty(msg))
-                    msg = "One or more bird groups are invalid.";
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(msg, "Save Failed");
+                var msg = new StringBuilder();
+                msg.Append(Task.ActiveObservation.Error + "\n");
+                foreach (var birdGroup in Task.ActiveObservation.BirdGroups)
+                    msg.Append(birdGroup.Error + "\n");
+                string msg2 = msg.ToString();
+                if (msg.Length == 0)
+                    msg2 = "Problem is undefined.  Geometry may be out of bounds.";
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(msg2, "Save Failed",MessageBoxButton.OK,MessageBoxImage.Error);
             }
         }
 
@@ -246,7 +252,7 @@ namespace AnimalObservations
 
         #endregion
 
-        private void dockPanel_IsKeyboardFocusWithinChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+        private void dockPanel_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             Keyboard.Focus(angleTextBox);
         }

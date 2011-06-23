@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
@@ -31,6 +32,7 @@ namespace AnimalObservations
         private Feature Feature { get; set; }
         internal Guid Guid { get; private set; }
         internal Observation Observation { get; private set; }
+        internal string Error { get; set; }
 
         //public properties for WPF/XAML interface binding
         public int Size { get; set; }
@@ -133,6 +135,19 @@ namespace AnimalObservations
 
         #region Saving/Deleting
 
+        internal bool ValidateBeforeSave()
+        {
+            var errors = new StringBuilder();
+            if (Size < 1)
+                errors.Append("Bird group size must be a positive integer.\n");
+            if (Size > 99)
+                errors.Append("Bird group size cannot be greater than 99.\n");
+            if (Behavior != 'W' && Behavior != 'F')
+                errors.Append("Bird group behaviour must be 'Water' or 'Flying'.\n");
+            Error = errors.ToString();
+            return errors.Length == 0;
+        }
+
         internal bool Save()
         {
             //Toggle one of the following lines for choice of reference system
@@ -143,7 +158,18 @@ namespace AnimalObservations
             Feature.FeatureDataRow["Behavior"] = Behavior.ToString();
             Feature.FeatureDataRow["Species"] = Species.ToString();
             Feature.FeatureDataRow["Comments"] = Comments ?? (object)DBNull.Value;
-            return Feature.SaveEdits();
+            if (!Feature.SaveEdits())
+            {
+                var errors = new StringBuilder();
+                if (!Feature.HasValidGeometry)
+                    errors.Append("Geometry is invalid.\n");
+                if (!Feature.HasValidAttributes)
+                    errors.Append("One or more attributes are invalid.\n");
+                Error = errors.ToString();
+                return false;
+            }
+            Error = string.Empty;
+            return true;
         }
 
         private Point GetLocation(BirdGroupLocationRelativeTo angleBasis)

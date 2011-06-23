@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
@@ -18,6 +19,8 @@ namespace AnimalObservations
         private Feature Feature { get; set; }
         internal Guid Guid { get; private set; }
         public GpsPoint GpsPoint { get; private set; }  //public for XAML binding
+        internal string Error { get; set; }
+
 
         //public properties for WPF/XAML interface binding
         public int Angle { 
@@ -151,26 +154,24 @@ namespace AnimalObservations
 
         #region Save/Update
 
-        internal string ValidateBeforeSave()
+        internal bool ValidateBeforeSave()
         {
-            string errors = "";
-            if (!Feature.HasValidGeometry)
-                errors += "Geometry is invalid.\n";
-            if (!Feature.HasValidAttributes)
-                errors += "One or more attributes are invalid.\n";
+            var errors = new StringBuilder();
             if (Angle < 0)
-                errors += "Angle must be a positive integer.\n";
+                errors.Append("Angle must be a positive integer.\n");
             if (Angle > 360)
-                errors += "Angle cannot be greater than 360.\n";
+                errors.Append("Angle cannot be greater than 360.\n");
             if (Distance <= 0)
-                errors += "Distance must be a positive integer.\n";
+                errors.Append("Distance must be a positive integer.\n");
             if (Distance > 500)
-                errors += "Distance cannot be greater than 500m.\n";
+                errors.Append("Distance cannot be greater than 500m.\n");
             if (BirdGroups.Count < 1)
-                errors += "Each observation must have at least one bird group.\n";
-            if (BirdGroups.Any(birdGroup => !birdGroup.IsValid))
-                errors += "All bird groups must be valid (Group size is a positive integer less than 100 and behavior is not pending).\n";
-            return errors;
+                errors.Append("Each observation must have at least one bird group.\n");
+            foreach (var birdGroup in BirdGroups)
+                if (!string.IsNullOrEmpty(birdGroup.Error))
+                    errors.Append(birdGroup.Error + "\n");
+            Error = errors.ToString();
+            return errors.Length == 0;
         }
 
         internal bool Save()
@@ -180,7 +181,17 @@ namespace AnimalObservations
             Feature.FeatureDataRow["GPSPointID"] = GpsPoint.Guid;
             Feature.FeatureDataRow["Angle"] = Angle;
             Feature.FeatureDataRow["Distance"] = Distance;
-            return Feature.SaveEdits() && SaveBirds();
+            if (!Feature.SaveEdits())
+            {
+                var errors = new StringBuilder();
+                if (!Feature.HasValidGeometry)
+                    errors.Append("Geometry is invalid.\n");
+                if (!Feature.HasValidAttributes)
+                    errors.Append("One or more attributes are invalid.\n");
+                Error = errors.ToString();
+                return false;
+            }
+            return SaveBirds();
         }
 
         private bool SaveBirds()

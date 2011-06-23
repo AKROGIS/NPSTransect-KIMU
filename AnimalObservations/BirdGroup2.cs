@@ -247,6 +247,9 @@ namespace AnimalObservations
                         error.Append((error.Length != 0 ? ", " : "") + propertyError);
                     }
                 }
+                //Check the Error property of the underlying database object
+                if (DbLink != null && !string.IsNullOrEmpty(DbLink.Error))
+                    error.Append((error.Length != 0 ? ", " : "") + DbLink.Error);
                 return error.ToString();
             }
         }
