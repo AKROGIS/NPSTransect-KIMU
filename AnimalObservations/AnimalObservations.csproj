@@ -23,7 +23,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\..\..\..\..\..\ProgramData\ESRI\ArcGIS Mobile\Extensions\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;BROKEN_WHERE_GUID GPSINANCHORAGE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;BROKEN_WHERE_GUID TESTINGWITHOUTGPS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>

@@ -138,7 +138,7 @@ namespace AnimalObservations
             CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
             //MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
             MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
-            return (IsRecording = true);
+            IsRecording = true;
 #else
             if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
             {
