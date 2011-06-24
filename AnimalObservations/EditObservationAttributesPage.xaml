@@ -75,7 +75,7 @@
 
         <StackPanel x:Name="queueDisplay" HorizontalAlignment="Stretch"  DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">
             <Label HorizontalAlignment="left" Target="{Binding ElementName=observationListView}" >_Unfinished Observations:</Label>
-            <ListView HorizontalAlignment="right" x:Name="observationListView"  
+            <ListView HorizontalAlignment="right" x:Name="observationListView" PreviewMouseDown="observationListView_PreviewMouseDown" 
                   ItemsSource="{Binding Task.OpenObservations}" DisplayMemberPath="GpsPoint.DisplayTime" SelectedItem="{Binding Task.ActiveObservation}" >
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>

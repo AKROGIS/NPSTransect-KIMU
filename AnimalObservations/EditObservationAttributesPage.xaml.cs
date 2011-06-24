@@ -114,7 +114,7 @@ namespace AnimalObservations
         {
             //Discard this observation (if existing, abandon changes; if new, delete new (unsaved) feature)
             //Transition to next in list, or if empty, previous page
-
+            dataGrid.CancelEdit();
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
                 MobileApplication.Current.Transition(PreviousPage);
@@ -126,6 +126,7 @@ namespace AnimalObservations
 
             //CreateWith() may throw exceptions, but that would be catastrophic, so let the app handle it.
             //Only use one of the following based on prefered behavior
+            dataGrid.CommitEdit();
             Task.AddObservationAsActive(Observation.FromGpsPoint(Task.CurrentGpsPoint));
             //Task.AddObservationAsInactive(Observation.CreateWith(Task.CurrentGpsPoint));
             //If the new observation is the active observation, set focus on Angle Box; don't change focus if AddObservationAsInactive
@@ -156,6 +157,7 @@ namespace AnimalObservations
             //Transition to next in list, or if empty, previous page
 
             //If saving throws an exception, it is catastrophic, so let the app handle it
+            dataGrid.CommitEdit();
             bool saved = Task.ActiveObservation.Save();
             if (saved)
             {
@@ -255,6 +257,11 @@ namespace AnimalObservations
         private void dockPanel_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             Keyboard.Focus(angleTextBox);
+        }
+
+        private void observationListView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            dataGrid.CommitEdit();
         }
     }
 
