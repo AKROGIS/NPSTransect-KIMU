@@ -7,8 +7,7 @@ namespace AnimalObservations
 {
     public partial class SetupTrackLogPage
     {
-        //These are used in XAML data binding so they must be public properties
-        //One-Time, One-Way bindings:
+        //Public for XAML binding
         public CollectTrackLogTask Task { get; private set; }
 
         #region Constructor
@@ -44,12 +43,10 @@ namespace AnimalObservations
         private void InitializeData()
         {
             Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
-            //WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Weather");
-            //VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Visibility");
-            //BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(TrackLog.FeatureLayer, "Beaufort");
         }
 
         #endregion
+
 
         #region Page update (called from Loaded event)
 
@@ -86,31 +83,34 @@ namespace AnimalObservations
 
         #endregion
 
+
         #region Page navigation overrides
 
+        /// <summary>
+        /// Cancel editing tracklog attributes, quit task.
+        /// </summary>
         protected override void OnBackCommandExecute()
         {
-            //Cancel editing tracklog attributes, quit task.
-
-            //Delete the new uncommitted tracklog feature
             Task.CurrentTrackLog.DeleteFeature();
             Task.DefaultTrackLog = Task.CurrentTrackLog;
             Task.CurrentTrackLog = null;
             MobileApplication.Current.Transition(PreviousPage);
         }
 
+        /// <summary>
+        /// Save tracklog attributes, and begin gps logging, transition to new page
+        /// </summary>
         protected override void OnOkCommandExecute()
         {
-            //Save tracklog attributes, and begin gps logging, transition to new page
-
-            //At this point geometry is invalid, so we don't bother saving the tracklog.
-            //The tracklog will save itself as soon as it has two points. 
             Task.StartRecording();
             Task.CurrentTrackLog.StartingTime = DateTime.Now;
+            //At this time the tracklog geometry is invalid, so we don't bother saving it.
+            //The tracklog will save itself as soon as it has two points. 
             MobileApplication.Current.Transition(new RecordTrackLogPage());
         }
         
         #endregion
+
 
         #region Keyboard event overrides
 

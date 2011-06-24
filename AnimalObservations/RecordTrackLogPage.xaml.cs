@@ -5,6 +5,8 @@ using System.Windows.Input;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 
+//TODO drag image while panning
+
 namespace AnimalObservations
 {
     public partial class RecordTrackLogPage
@@ -116,8 +118,6 @@ namespace AnimalObservations
         }
         private System.Windows.Point _mouseDownPoint;
         private bool _myMouseDown;
-
-        //TODO drag image while panning
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {

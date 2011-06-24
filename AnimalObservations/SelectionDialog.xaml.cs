@@ -4,7 +4,7 @@ namespace AnimalObservations
 {
     public partial class SelectionDialog
     {
-        public SelectionAction Action { get; set; }
+        public SelectionAction Action { get; private set; }
 
         public SelectionDialog()
         {

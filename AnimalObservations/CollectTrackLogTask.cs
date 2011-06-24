@@ -20,6 +20,9 @@ namespace AnimalObservations
 {
     public class CollectTrackLogTask : Task
     {
+
+        #region Constructor
+        
         public CollectTrackLogTask()
         {
             Name = "Collect Observations";  
@@ -36,6 +39,9 @@ namespace AnimalObservations
             CloseGpsConnection();
             StopRecording();
         }
+
+        #endregion
+
 
         #region Overrides
 
@@ -83,7 +89,6 @@ namespace AnimalObservations
 #if TESTINGWITHOUTGPS
             ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Program is operating without a GPS.", "Test Mode");
 #else
-            //Not used in production code - testing workaround  Also see StartRecording()
             if (!_gpsConnection.IsOpen || MostRecentLocation == null)
             {
                 ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
@@ -92,7 +97,6 @@ namespace AnimalObservations
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
-            //End of testing hack
 #endif
             MobileApplication.Current.Transition(new SetupTrackLogPage());
         }
@@ -131,7 +135,7 @@ namespace AnimalObservations
         //while current tracklog is not null recording may be turned on/off.
         //CurrentTrackLog will never be changed unless recording is off.
 
-        internal bool StartRecording()
+        internal void StartRecording()
         {
 #if TESTINGWITHOUTGPS
             //Create a bogus GPS location
@@ -150,7 +154,6 @@ namespace AnimalObservations
                 //Collect our first point now, don't wait for an event. 
                 SaveGpsPoint();
             }
-            return IsRecording;
 #endif
         }
 
@@ -180,7 +183,7 @@ namespace AnimalObservations
             CurrentTrackLog = null;
         }
 
-        internal bool IsRecording { get; private set;}
+        private bool IsRecording { get; set;}
 
         private bool PostChanges()
         {
@@ -216,12 +219,12 @@ namespace AnimalObservations
 
         #region Manage Observation Queue
 
-        //Use ObservableCollection to propagate changes to the XAML UI
         public ObservableCollection<Observation> OpenObservations { get; private set; }
+
         public Observation ActiveObservation
         {
             get { return _activeObservation; }
-            set
+            private set
             { 
                 if (value != _activeObservation)
                 {
@@ -232,13 +235,6 @@ namespace AnimalObservations
         }
         private Observation _activeObservation;
 
-        public System.Windows.Visibility ObservationQueueVisibility
-        {
-            get {
-                return OpenObservations.Count > 1 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-            }
-        }
-
         private void InitializeObservationQueue()
         {
             OpenObservations = new ObservableCollection<Observation>();
@@ -247,15 +243,8 @@ namespace AnimalObservations
 
         public void AddObservationAsActive(Observation observation)
         {
-            AddObservationAsInactive(observation);
-            ActiveObservation = observation;
-        }
-
-        public void AddObservationAsInactive(Observation observation)
-        {
             OpenObservations.Add(observation);
-            if (ActiveObservation == null)
-                ActiveObservation = observation;
+            ActiveObservation = observation;
         }
 
         public void RemoveObservation(Observation observation)
@@ -265,35 +254,6 @@ namespace AnimalObservations
             //If observation == ActiveObservation, then XAML bindings will set ActiveObservation to null
             if (ActiveObservation == null || observation == ActiveObservation)
                 ActiveObservation = (OpenObservations.Count == 0) ? null : OpenObservations[0];
-        }
-
-        public void RemoveObservationAlt(Observation observation)
-        {
-            //If we are deleting the active record, make the next record active
-            int deletedIndex = OpenObservations.IndexOf(observation);
-            int activeIndex = OpenObservations.IndexOf(ActiveObservation);
-            OpenObservations.Remove(observation);
-            if (deletedIndex <= activeIndex)
-                activeIndex--;
-            ActiveObservation = (activeIndex == -1) ? null : OpenObservations[activeIndex];
-        }
-
-        public void NextObservation()
-        {
-            int activeIndex = OpenObservations.IndexOf(ActiveObservation);
-            activeIndex++;
-            if (activeIndex == OpenObservations.Count)
-                activeIndex = 0;
-            ActiveObservation = OpenObservations[activeIndex];
-        }
-
-        public void PreviousObservation()
-        {
-            int activeIndex = OpenObservations.IndexOf(ActiveObservation);
-            activeIndex--;
-            if (activeIndex == -1)
-                activeIndex = OpenObservations.Count - 1;
-            ActiveObservation = OpenObservations[activeIndex];
         }
 
         #endregion
@@ -307,12 +267,12 @@ namespace AnimalObservations
         /// <summary>
         /// This is updated only when we are recording.  These objects are saved to disk
         /// </summary>
-        public GpsPoint CurrentGpsPoint { get; set; }
+        public GpsPoint CurrentGpsPoint { get; private set; }
 
         /// <summary>
         /// This is updated whenever the GPS is receiving a position fix.  It is only used for map updates/queries
         /// </summary>
-        public Coordinate MostRecentLocation { get; set; }
+        public Coordinate MostRecentLocation { get; private set; }
 
         private GpsConnection _gpsConnection;
 
