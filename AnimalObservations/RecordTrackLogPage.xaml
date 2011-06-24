@@ -8,7 +8,7 @@
     DataContext="{Binding RelativeSource={RelativeSource Self}}"
     >
     <DockPanel>
-        <WrapPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
+        <WrapPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" IsEnabled="{Binding Task.CurrentTrackLog.CanSave}">
             <WrapPanel.Resources>
                 <Style TargetType="ComboBox">
                     <Setter Property="Margin" Value="0,5,15,5"/>

@@ -2,13 +2,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
 
 namespace AnimalObservations
 {
-    public class TrackLog
+    public class TrackLog: INotifyPropertyChanged
     {
         internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Tracks");
         private static readonly Dictionary<Guid, TrackLog> TrackLogs = new Dictionary<Guid, TrackLog>();
@@ -35,6 +36,10 @@ namespace AnimalObservations
         public int Visibility { get; set; }
         public int Beaufort { get; set; }
         public bool? OnTransect { get; set; }
+        public bool CanSave
+        {
+            get { return !Feature.HasErrors; }
+        }
 
         #region constructors
 
@@ -161,7 +166,10 @@ namespace AnimalObservations
                 throw new ArgumentNullException("coordinate");
             Feature.Geometry.AddCoordinate(coordinate);
             if (Feature.Geometry.CurrentPart.Count == 2)
+            {
                 Save();
+                OnPropertyChanged("CanSave");
+            }
             if (Feature.Geometry.CurrentPart.Count % 4 == 0)
                 QuickSave();
         }
@@ -206,5 +214,15 @@ namespace AnimalObservations
         }
 
         #endregion
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string property)
+        {
+            PropertyChangedEventHandler handle = PropertyChanged;
+            if (handle != null)
+                handle(this, new PropertyChangedEventArgs(property));
+        }
+
     }
 }
