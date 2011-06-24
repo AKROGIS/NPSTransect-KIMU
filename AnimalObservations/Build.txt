@@ -1,0 +1,10 @@
+﻿
+Production Compilation Symbols:
+BROKEN_WHERE_GUID - Provides a work around for an ESRI bug.  Bug does not return results for queries based on 'WHERE GUID = {...}'
+
+Debug Compilation Symbols:
+TESTINGWITHOUTGPS - define this symbol when testing without a GPS signal
+GPSINANCHORAGE - define this symbol when testing with a GPS signal in anchorage
+GPSINJUNEAU - define this symbol when testing with a GPS signal at the SEAN office in Juneau
+
+BROKEN_WHERE_GUID - see above
