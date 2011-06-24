@@ -10,6 +10,8 @@ using ESRI.ArcGIS.Mobile.MobileServices;
 //BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
 
 //TODO - merge with BirdGroup (?? need a default constructor for Datagrid WPF/XAML interface)
+// The default constructor must find the related observation object - this may not be easy.
+// or create without an observation object, and assign it later.  Check during save.
 //TODO - sort out the difference between cancel, abort, and delete:
 //  1) aborting the creation of a new object
 //  2) canceling changes to an existing object
@@ -121,7 +123,7 @@ namespace AnimalObservations
 
         #region Saving/Deleting
 
-        //TODO use or remove BirdGroupFeature.ValidateBeforeSave()
+        //TODO use or remove BirdGroupFeature.ValidateBeforeSave() - save for use in birdgroup type merge
 
         internal bool ValidateBeforeSave()
         {
