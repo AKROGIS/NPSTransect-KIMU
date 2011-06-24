@@ -205,36 +205,4 @@ namespace AnimalObservations
 
         #endregion
     }
-
-    // TODO remove datagrid row validator, or move to a separate class
-
-    public class RowDataInfoValidationRule : ValidationRule
-    {
-        public override ValidationResult Validate(object value,
-                        CultureInfo cultureInfo)
-        {
-            var group = (BindingGroup)value;
-
-            StringBuilder error = null;
-            foreach (var item in group.Items)
-            {
-                // aggregate errors
-                var info = item as IDataErrorInfo;
-                if (info != null)
-                {
-                    if (!string.IsNullOrEmpty(info.Error))
-                    {
-                        if (error == null)
-                            error = new StringBuilder();
-                        error.Append((error.Length != 0 ? ", " : "") + info.Error);
-                    }
-                }
-            }
-
-            if (error != null)
-                return new ValidationResult(false, error.ToString());
-
-            return ValidationResult.ValidResult;
-        }
-    }
 }

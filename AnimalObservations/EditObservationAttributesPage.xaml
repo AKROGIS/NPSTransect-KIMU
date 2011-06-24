@@ -66,9 +66,6 @@
                     <toolkit:DataGridComboBoxColumn Header="Species" SelectedItemBinding="{Binding Species}" ItemsSource="{Binding Source={StaticResource GetEnumSpecies}}"/>
                     <toolkit:DataGridTextColumn Header="Comment" Binding="{Binding Comment}" MinWidth="500" />
                 </toolkit:DataGrid.Columns>
-                <toolkit:DataGrid.RowValidationRules>
-                    <local:RowDataInfoValidationRule ValidationStep="UpdatedValue" />
-                </toolkit:DataGrid.RowValidationRules>
             </toolkit:DataGrid>
             <Label Grid.Column="1" Grid.Row="3" Name="errorLabel" Margin="10"  FontStyle="Italic" FontSize="11" Foreground="Red" FontWeight="Normal"/>
         </Grid>
