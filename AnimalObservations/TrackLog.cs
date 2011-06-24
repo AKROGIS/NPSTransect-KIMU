@@ -1,6 +1,4 @@
-﻿#define BROKEN_WHERE_GUID
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using ESRI.ArcGIS.Mobile.Client;
@@ -11,7 +9,7 @@ namespace AnimalObservations
 {
     public class TrackLog: INotifyPropertyChanged
     {
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Tracks");
+        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Tracks");
         private static readonly Dictionary<Guid, TrackLog> TrackLogs = new Dictionary<Guid, TrackLog>();
 
         //These are used in XAML data binding so they must be public properties
@@ -40,6 +38,7 @@ namespace AnimalObservations
         {
             get { return !Feature.HasErrors; }
         }
+
 
         #region constructors
 
@@ -157,6 +156,7 @@ namespace AnimalObservations
 
         #endregion
 
+
         #region Update and Save/Delete
 
         internal void AddPoint(Coordinate coordinate)
@@ -182,7 +182,8 @@ namespace AnimalObservations
 
         private bool QuickSave()
         {
-            Feature.FeatureDataRow["End"] = FinishingTime = DateTime.Now;    
+            FinishingTime = DateTime.Now;
+            Feature.FeatureDataRow["End"] = FinishingTime;     
             return Feature.SaveEdits();
         }
 
@@ -215,6 +216,9 @@ namespace AnimalObservations
 
         #endregion
 
+
+        #region INotifyPropertyChanged
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged(string property)
@@ -224,5 +228,6 @@ namespace AnimalObservations
                 handle(this, new PropertyChangedEventArgs(property));
         }
 
+        #endregion
     }
 }

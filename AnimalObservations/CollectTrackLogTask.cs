@@ -1,8 +1,4 @@
-﻿//#define TESTINGWITHOUTGPS
-#define GPSINANCHORAGE
-//#define GPSINJUNEAU
-
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Controls;

@@ -1,6 +1,4 @@
-﻿#define BROKEN_WHERE_GUID
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,6 +6,8 @@ using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.MobileServices;
+
+//BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
 
 //TODO - merge with BirdGroup (?? need a default constructor for Datagrid WPF/XAML interface)
 //TODO - sort out the difference between cancel, abort, and delete:
@@ -17,18 +17,10 @@ using ESRI.ArcGIS.Mobile.MobileServices;
 
 namespace AnimalObservations
 {
-    //BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
     public class BirdGroupFeature
     {
-
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("BirdGroups");
+        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("BirdGroups");
         private static readonly Dictionary<Guid, BirdGroupFeature> BirdGroups = new Dictionary<Guid, BirdGroupFeature>();
-
-        //These are used in XAML data binding so they must be public properties
-        //One-Time, One-Way bindings:
-        //NOTE - currently not used, since datagrid uses enums in BirdGroup2 for picklists
-        //public static IDictionary<string, string> BehaviorDomain { get; private set; }
-        //public static IDictionary<string, string> SpeciesDomain { get; private set; }
 
         private Feature Feature { get; set; }
         private Guid Guid { get; set; }
@@ -39,21 +31,8 @@ namespace AnimalObservations
         internal string Comments { get; set; }
         internal string Error { get; private set; }
 
-        //public properties for WPF/XAML interface binding
-        //public int Size { get; set; }
-        //public char Behavior { get; set; }
-        //public char Species { get; set; }
-        //public string Comments { get; set; }
-
 
         #region Constructors
-
-        //Class Constructor
-        //static BirdGroup()
-        //{
-        //    BehaviorDomain = MobileUtilities.GetCodedValueDictionary<string>(FeatureLayer, "Behavior");
-        //    SpeciesDomain = MobileUtilities.GetCodedValueDictionary<string>(FeatureLayer, "Species");
-        //}
 
         //Instance Constructor  - not permitted, use static create/from methods.
         private BirdGroupFeature()
@@ -62,6 +41,7 @@ namespace AnimalObservations
         internal static IEnumerable<BirdGroupFeature> AllWithObservation(Observation observation)
         {
             var results = new List<BirdGroupFeature>();
+
             //First get all the matching bird groups that have already been loaded
             results.AddRange(BirdGroups.Values.Where(bird => bird.Observation == observation));
 
@@ -73,18 +53,18 @@ namespace AnimalObservations
             string whereClause = string.Format("ObservationID = '{{{0}}}'", observation.Guid);
             var rows = MobileUtilities.GetFeatureRows(FeatureLayer, whereClause)
 #endif
-            //We need to enable editing before we can check the 
-            //foreach (var feature in birds)
-            //    if (!feature.IsEditing)
-            //        feature.StartEditing();
-
             results.AddRange(from birdFeature in rows
                              where !BirdGroups.ContainsKey(new Guid(birdFeature.GlobalId.ToByteArray()))
                              select FromFeature(new Feature(birdFeature)));
             return results;
         }
 
-        //May return null if no feature is found within extents
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="extents"></param>
+        /// <returns>May return null if no feature is found within extents</returns>
         internal static BirdGroupFeature FromEnvelope(Envelope extents)
         {
             //Check to see if it is in our cache, if not, then load from database
@@ -140,6 +120,8 @@ namespace AnimalObservations
 
 
         #region Saving/Deleting
+
+        //TODO use or remove BirdGroupFeature.ValidateBeforeSave()
 
         internal bool ValidateBeforeSave()
         {

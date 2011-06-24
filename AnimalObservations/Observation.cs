@@ -1,6 +1,4 @@
-﻿#define BROKEN_WHERE_GUID
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,17 +11,20 @@ namespace AnimalObservations
 {
     public class Observation
     {
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Observations");
+        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Observations");
         private static readonly Dictionary<Guid, Observation> Observations = new Dictionary<Guid, Observation>();
 
         private Feature Feature { get; set; }
         internal Guid Guid { get; private set; }
-        public GpsPoint GpsPoint { get; private set; }  //public for XAML binding
         internal string Error { get; set; }
 
 
-        //public properties for WPF/XAML interface binding
-        public int Angle { 
+        #region Public properties for WPF/XAML interface binding
+
+        public GpsPoint GpsPoint { get; private set; }
+        public ObservableCollection<BirdGroup> BirdGroups { get; private set; }
+        public int Angle
+        { 
             get
             {
                 return _angle;
@@ -56,7 +57,8 @@ namespace AnimalObservations
         }
         private int _distance;
 
-        public ObservableCollection<BirdGroup> BirdGroups { get; private set; }
+        #endregion
+
 
         #region Constructors
 
@@ -152,6 +154,7 @@ namespace AnimalObservations
 
         #endregion
 
+
         #region Save/Update
 
         internal bool ValidateBeforeSave()
@@ -218,7 +221,6 @@ namespace AnimalObservations
 
 
         #endregion
-
     }
 }
 

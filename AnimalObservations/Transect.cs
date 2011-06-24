@@ -10,7 +10,7 @@ namespace AnimalObservations
 {
     public class Transect
     {
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Transects");
+        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Transects");
         private static readonly Dictionary<string, Transect> Transects = new Dictionary<string, Transect>();
 
         public Geometry Shape { get; private set; }

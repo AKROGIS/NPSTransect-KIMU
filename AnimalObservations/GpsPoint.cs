@@ -1,9 +1,4 @@
-﻿//#define TESTINGWITHOUTGPS
-#define GPSINANCHORAGE
-//#define GPSINJUNEAU
-#define BROKEN_WHERE_GUID
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
@@ -14,7 +9,7 @@ namespace AnimalObservations
 {
     public class GpsPoint
     {
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GpsPoints");
+        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GpsPoints");
         private static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
 
         private Feature Feature { get; set; }
@@ -31,6 +26,16 @@ namespace AnimalObservations
         internal GpsFixStatus SatelliteFixStatus { get; private set; }
         internal double Speed { get; private set; }
         internal double Bearing { get; private set; }
+
+        #region Public properties for WPF/XAML interface binding
+
+        //used by EditObservationAttributesPage.xaml in the list of open observations
+        public string DisplayTime
+        {
+            get { return LocalTime.ToLongTimeString(); }
+        }   
+
+        #endregion
 
 
         #region constructors
@@ -165,6 +170,7 @@ namespace AnimalObservations
 
         #endregion
 
+
         #region Save/Delete
 
         internal void Save()
@@ -191,12 +197,5 @@ namespace AnimalObservations
         }
 
         #endregion
-
-        //public for XAML binding
-        public string DisplayTime
-        {
-            get { return LocalTime.ToLongTimeString(); }
-        }   
-
     }
 }

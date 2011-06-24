@@ -1,6 +1,4 @@
-﻿#define BROKEN_WHERE_GUID
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -12,7 +10,7 @@ using ESRI.ArcGIS.Mobile.MobileServices;
 
 namespace AnimalObservations
 {
-    class MobileUtilities
+    static class MobileUtilities
     {
         internal const int SearchRadius = 2; //mm in display units (based on map scale) on each side of cursor point to search
 
@@ -26,12 +24,7 @@ namespace AnimalObservations
 
         #region Create New Features
 
-        internal static Feature CreateNewFeature(FeatureLayer featureLayer)
-        {
-            return CreateNewFeature(featureLayer, 0);
-        }
-
-        internal static Feature CreateNewFeature(FeatureLayer featureLayer, int subTypeIndex)
+        internal static Feature CreateNewFeature(FeatureLayer featureLayer, int subTypeIndex = 0)
         {
             if (subTypeIndex < 0 || subTypeIndex >= MobileApplication.Current.Project.FeatureTypeDictionary[featureLayer].Count)
                 throw new ArgumentOutOfRangeException("subTypeIndex");
@@ -40,6 +33,7 @@ namespace AnimalObservations
         }
 
         #endregion
+
 
         #region Get existing Features
 
@@ -72,13 +66,12 @@ namespace AnimalObservations
                    where row[columnIndex] is Guid && (Guid)row[columnIndex] == guid
                    select row;
         }
-#endif
-
+#else
         internal static Feature GetFeature(FeatureLayer featureLayer, string whereClause)
         {
             return GetFeatures(featureLayer, whereClause).FirstOrDefault();
         }
-
+#endif
         internal static Feature GetFeature(FeatureLayer featureLayer, Envelope extents)
         {
             return GetFeatures(featureLayer, extents).FirstOrDefault();
@@ -105,15 +98,10 @@ namespace AnimalObservations
             if (table == null)
                 return Enumerable.Empty<Feature>();
             return from FeatureDataRow row in table.Rows select new Feature(row);
-            //return table.Rows.Cast<FeatureDataRow>().Select(row =>
-            //{
-            //    var f = new Feature(row);
-            //    f.StartEditing();
-            //    return f;
-            //});
         }
 
         #endregion
+
 
         #region domains/picklist
 
@@ -138,7 +126,5 @@ namespace AnimalObservations
         }
 
         #endregion
-
-
     }
 }

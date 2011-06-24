@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel;
 using System.Text;
 
+//BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
+
 namespace AnimalObservations
 {
-    //BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
     public class BirdGroup : IDataErrorInfo
     {
 
@@ -12,24 +13,6 @@ namespace AnimalObservations
         public BirdGroupBehavior Behavior { get; set; }
         public BirdGroupSpecies Species { get; set; }
         public string Comment { get; set; }
-
-        //public int GroupSize
-        //{
-        //    get
-        //    {
-        //        return _groupSize;
-        //    }
-        //    set
-        //    {
-        //        if (value <= 0)
-        //            throw new ArgumentOutOfRangeException("value", "GroupSize must be positive.");
-        //        if (value >= 100)
-        //            throw new ArgumentOutOfRangeException("value", "GroupSize must be less than 100.");
-        //        _groupSize = value;
-        //    }
-        //}
-        //private int _groupSize;
-
 
         private BirdGroupFeature BirdGroupFeature { get; set; }
 
@@ -104,126 +87,6 @@ namespace AnimalObservations
         #endregion
 
 
-        #region autogrid population with keyboard entry
-        //TODO - remove this key code stuff
-
-        //internal bool IsValid
-        //{
-        //    get
-        //    {
-        //        return Behavior != BirdGroupBehavior.Pending &&
-        //               GroupSize > 0 &&
-        //               GroupSize < 100;
-        //    }
-        //}
-
-        //internal bool IsComplete
-        //{
-        //    get
-        //    {
-        //        return Behavior != BirdGroupBehavior.Pending &&
-        //               Species != BirdGroupSpecies.Pending &&
-        //               (9 < GroupSize || (0 < GroupSize && !_previousCharacterWasDigit));
-        //    }
-        //}
-
-        //public void Reset()
-        //{
-        //    GroupSize = default(int);
-        //    Behavior = default(BirdGroupBehavior);
-        //    Species = default(BirdGroupSpecies);
-        //    Comment = default(string);
-        //    BirdGroupFeature = default(BirdGroupFeature);
-        //    _previousCharacterWasDigit = default(bool);
-        //}
-
-        //internal static bool RecognizeKey(char character)
-        //{
-        //    return "0123456789WwFfMmKkUu".Contains(character.ToString());
-        //}
-
-        //internal bool AcceptKey(char character)
-        //{
-        //    if (!RecognizeKey(character))
-        //        goto invalidNonDigit;
-
-        //    //Digits
-        //    if (Char.IsDigit(character))
-        //    {
-        //        int digit = int.Parse(character.ToString());
-
-        //        //reject leading zeros
-        //        if (digit == 0 && !_previousCharacterWasDigit)
-        //            goto invalidDigit;
-
-        //        //reject digit-nondigit-digit sequence
-        //        if (GroupSize > 0 && !_previousCharacterWasDigit)
-        //            goto invalidDigit;
-
-        //        //reject third digit
-        //        if (GroupSize > 9)
-        //            goto invalidDigit;
-
-        //        //accept all other digits
-        //        GroupSize = GroupSize * 10 + digit;
-        //        goto validDigit;
-        //    }
-
-        //    //Recognized Non-digits
-        //    switch (character)
-        //    {
-        //        case 'W':
-        //        case 'w':
-        //            if (Behavior != BirdGroupBehavior.Pending)
-        //                goto invalidNonDigit;
-        //            Behavior = BirdGroupBehavior.Water;
-        //            goto validNonDigit;
-        //        case 'F':
-        //        case 'f':
-        //            if (Behavior != BirdGroupBehavior.Pending)
-        //                goto invalidNonDigit;
-        //            Behavior = BirdGroupBehavior.Flying;
-        //            goto validNonDigit;
-        //        case 'M':
-        //        case 'm':
-        //            if (Species != BirdGroupSpecies.Pending)
-        //                goto invalidNonDigit;
-        //            Species = BirdGroupSpecies.Marbled;
-        //            goto validNonDigit;
-        //        case 'K':
-        //        case 'k':
-        //            if (Species != BirdGroupSpecies.Pending)
-        //                goto invalidNonDigit;
-        //            Species = BirdGroupSpecies.Kitlitz;
-        //            goto validNonDigit;
-        //        case 'U':
-        //        case 'u':
-        //            if (Species != BirdGroupSpecies.Pending)
-        //                goto invalidNonDigit;
-        //            Species = BirdGroupSpecies.Unidentified;
-        //            goto validNonDigit;
-        //        default:
-        //            goto invalidNonDigit;
-        //    }
-        //    invalidDigit:
-        //        _previousCharacterWasDigit = true;
-        //        return false;
-        //    validDigit:
-        //        _previousCharacterWasDigit = true;
-        //        return true;
-        //    invalidNonDigit:
-        //        _previousCharacterWasDigit = false;
-        //        return false;
-        //    validNonDigit:
-        //        _previousCharacterWasDigit = false;
-        //        return true;
-        //}
-
-        //private bool _previousCharacterWasDigit;
-
-        #endregion
-
-
         #region IDataErrorInfo Members
 
         public string Error
@@ -232,8 +95,7 @@ namespace AnimalObservations
             {
                 var error = new StringBuilder();
 
-                // iterate over all of the properties
-                // of this object - aggregating any validation errors
+                // iterate over all of the properties of this object - aggregating any validation errors
                 PropertyDescriptorCollection props = TypeDescriptor.GetProperties(this);
                 foreach (PropertyDescriptor prop in props)
                 {
