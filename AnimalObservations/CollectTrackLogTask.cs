@@ -181,6 +181,7 @@ namespace AnimalObservations
 
         private bool IsRecording { get; set;}
 
+#if !TESTINGWITHOUTGPS
         private bool PostChanges()
         {
             //Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
@@ -189,7 +190,7 @@ namespace AnimalObservations
                 saved = saved && observation.Save();
             return saved;
         }
-
+#endif
 
         internal TrackLog DefaultTrackLog { get; set; }
 
