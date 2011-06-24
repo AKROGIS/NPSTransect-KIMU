@@ -12,7 +12,9 @@ using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
 using ESRI.ArcGIS.Mobile.WPF;
-//using GpsDisplay = ESRI.ArcGIS.Mobile.WPF.GpsDisplay;
+
+//TODO - explore using ESRI.ArcGIS.Mobile.WPF.GpsDisplay
+//TODO - using locking so GPS events can be processed correctly on the GPS thread.
 
 namespace AnimalObservations
 {
@@ -26,11 +28,13 @@ namespace AnimalObservations
 
             NearbyTransects = new ObservableCollection<Transect>();
 
-            MobileApplication.Current.ProjectClosing += (s, e) =>
-            {
-                CloseGpsConnection();
-                StopRecording();
-            };
+            MobileApplication.Current.ProjectClosing += (s, e) => CloseProject();
+        }
+
+        private void CloseProject()
+        {
+            CloseGpsConnection();
+            StopRecording();
         }
 
         #region Overrides
@@ -129,62 +133,51 @@ namespace AnimalObservations
 
         internal bool StartRecording()
         {
-            //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
-            //lock (_gpsLock)
-            //{
 #if TESTINGWITHOUTGPS
-                //Create a bogus GPS location
-                CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
-                //MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
-                MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
-                return (IsRecording = true);
+            //Create a bogus GPS location
+            CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
+            //MostRecentLocation = new Coordinate(448262, 6479766);  //Main dock
+            MostRecentLocation = new Coordinate(443759, 6484291);  //East end of MainBay19
+            return (IsRecording = true);
 #else
-                if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
-                {
-                    IsRecording = false;
-                }
-                else
-                {
-                    IsRecording = true;
-                    //Collect our first point now, don't wait for an event. 
-                    //FIXME - the following seems to cause a conflicting event.  Removed for now
-                    //Connection_GpsChanged(null, null);
-                }
-                return IsRecording;
+            if (CurrentTrackLog == null || !_gpsConnection.IsOpen)
+            {
+                IsRecording = false;
+            }
+            else
+            {
+                IsRecording = true;
+                //Collect our first point now, don't wait for an event. 
+                SaveGpsPoint();
+            }
+            return IsRecording;
 #endif
-            //}
         }
 
         internal void StopRecording()
         {
+            if (!IsRecording) return;
+
             //Stop recording is currently called in the following situations:
             // 1) if the project is closing - could happen at any time
             // 2) if there is a GPS close event - could happen at any time
             // 3) when the record tracklog page clicks the stop button
-            // In case 3, the UI will handle the page transitions
-            // In case 1, the host will handle the page transition to a blank screen
-            // However, in case 2 I may get stuck with an open observation page and a closed observation object.
+            // In case 1, the host will handle the page transition to the open project page
+            // In case 2, the event will transition to the project start page (map page)
+            // In case 3, the UI will handle the page transitions to the previous page
 
-            //Make sure the GPS event doesn't change anything
-            //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
-            //lock (_gpsLock)
-            //{
-                if (IsRecording)
-                {
 #if !TESTINGWITHOUTGPS
-                    //Save any outstanding changes
-                    if (!PostChanges())
-                        ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving changes", "Save Failed");
+            //Save any outstanding changes
+            if (!PostChanges())
+                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving changes", "Save Failed");
 #endif
-                    //Close any open observations
-                    while (ActiveObservation != null)
-                        OpenObservations.Remove(ActiveObservation);
+            //Close any open observations
+            while (ActiveObservation != null)
+                OpenObservations.Remove(ActiveObservation);
 
-                    IsRecording = false;
-                    DefaultTrackLog = CurrentTrackLog;
-                    CurrentTrackLog = null;
-                }
-            //}
+            IsRecording = false;
+            DefaultTrackLog = CurrentTrackLog;
+            CurrentTrackLog = null;
         }
 
         internal bool IsRecording { get; private set;}
@@ -201,23 +194,19 @@ namespace AnimalObservations
 
         internal TrackLog DefaultTrackLog { get; set; }
 
-        //Use INotifyPropertyChanged to keep UI linked
+        //Use INotifyPropertyChanged to keep UI up to date
         public TrackLog CurrentTrackLog
         {
             get { return _currentTrackLog; }
             set
             {
-                //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
-                //lock (_gpsLock)
-                //{
-                    if (IsRecording)
-                        throw new InvalidOperationException("Cannot change current track log while recording.");
-                    if (value != _currentTrackLog)
-                    {
-                        _currentTrackLog = value;
-                        OnPropertyChanged("CurrentTrackLog");
-                    }
-                //}
+                if (IsRecording)
+                    throw new InvalidOperationException("Cannot change current track log while recording.");
+                if (value != _currentTrackLog)
+                {
+                    _currentTrackLog = value;
+                    OnPropertyChanged("CurrentTrackLog");
+                }
             }
         }
         private TrackLog _currentTrackLog;
@@ -313,10 +302,7 @@ namespace AnimalObservations
         #region Manage GPS connection and events
 
         //ALL GPS EVENTS HAPPEN ON A BACKGROUND THREAD
-        //As a basic rule, I need to lock around accessing any writable shared field.
-        //That is, any field the the GPS event reads or writes must be locked by all readers/writers
-        //TODO - multithreaded locking needs a lot more thought
-        //private readonly object _gpsLock = new object();
+        //in lieu of locking I am rout8ing them onto the UI thread.  This is safe but inefficient.
 
         /// <summary>
         /// This is updated only when we are recording.  These objects are saved to disk
@@ -330,102 +316,109 @@ namespace AnimalObservations
 
         private GpsConnection _gpsConnection;
 
+        private void InitializeGpsConnection()
+        {
+            HookupGpsEvents();
+            //Open the GPS connection.  Remove if we want to rely on application settings/user control
+            //GpsMgr.OpenAsync();
+        }
+
         private void CloseGpsConnection()
+        {
+            UnhookGpsEvents();
+            _gpsConnection = null;
+        }
+
+        private void UnhookGpsEvents()
         {
             if (_gpsConnection == null)
                 return;
             _gpsConnection.GpsClosed -= ProcessGpsClosedEventFromConnection;
             _gpsConnection.GpsError -= ProcessGpsErrorEventFromConnection;
             _gpsConnection.GpsChanged -= ProcessGpsChangedEventFromConnection;
-            _gpsConnection = null;
+            HideBoat();
         }
 
-        private void InitializeGpsConnection()
+        private void HookupGpsEvents()
         {
-            // Get GPS Connection and set up for change events
-            _gpsConnection = MobileApplication.Current.GpsConnectionManager.Connection;
-            //FIXME - Do I want to do this, or rely on application settings/user control
-            //GpsMgr.OpenAsync();
-            //FIXME - if the connection is closed and re-opened.  Do I need to get a new connection object?
-
-            _gpsConnection.GpsClosed += ProcessGpsClosedEventFromConnection;
-            _gpsConnection.GpsError += ProcessGpsErrorEventFromConnection;
-            _gpsConnection.GpsChanged += ProcessGpsChangedEventFromConnection;
-        }
-
-        void ProcessGpsErrorEventFromConnection(object sender, GpsErrorEventArgs e)
-        {
-            //Save, but don't close any open edits
-
-            //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
-            if (MobileApplication.Current.Dispatcher.CheckAccess())
+            if (_gpsConnection == null)
+                _gpsConnection = MobileApplication.Current.GpsConnectionManager.Connection;
+            if (_gpsConnection.IsOpen)
             {
-                //lock (_gpsLock)
-                //{
-                PostChanges();
-                //}
-                //TODO Can I call this message block on the GPS thread?
-                //TODO Does the gps connection object put up it own error message
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(e.Exception.Message, "GPS Error");
-                //Wait for the GPS to recover
-                //no new gps coordinates will be received or posted to an open track log while the error persists
-                //when the error clears, new gps events will be received, and any open tracklog will be updated appropriately.
-                //User can close any open observation, or stop recording, but they cannot add any new observations
-                //FIXME - prohibit adding new observation.  How do I detect the absense of the error condition?
+                _gpsConnection.GpsClosed += ProcessGpsClosedEventFromConnection;
+                _gpsConnection.GpsError += ProcessGpsErrorEventFromConnection;
+                _gpsConnection.GpsChanged += ProcessGpsChangedEventFromConnection;
+                _gpsConnection.GpsOpened -= ProcessGpsOpenedEventFromConnection;
+                ShowBoat();
             }
             else
             {
-                MobileApplication.Current.Dispatcher.Invoke(new EventHandler<GpsErrorEventArgs>(ProcessGpsErrorEventFromConnection),
-                    System.Windows.Threading.DispatcherPriority.Normal, sender, e);
+                _gpsConnection.GpsOpened += ProcessGpsOpenedEventFromConnection;                
             }
         }
 
+        void ProcessGpsOpenedEventFromConnection(object sender, EventArgs e)
+        {
+            if (MobileApplication.Current.Dispatcher.CheckAccess())
+                HookupGpsEvents();
+            else
+                MobileApplication.Current.Dispatcher.Invoke(new Action(HookupGpsEvents));
+        }
+
+        //This event is raised then an exception is encountered during processing GPS data
+        //I have yet to see this happen, so I'm not sure how to correctly respond.
+        //Until I have better information, I will respond by closing the GPS connection.
+        //This should trigger the gps closed event so I can save any work in progress.
+        void ProcessGpsErrorEventFromConnection(object sender, GpsErrorEventArgs e)
+        {
+            if (!MobileApplication.Current.Dispatcher.CheckAccess())
+            {
+                MobileApplication.Current.Dispatcher.Invoke(
+                    (System.Threading.ThreadStart) (() => ProcessGpsErrorEventFromConnection(sender, e)));
+            }
+            ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                "An error (" + e.Exception.Message + ") was encountered processing the GPS data. " +
+                "Data has been saved and the GPS has been closed.",
+                "GPS Error",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            _gpsConnection.Close();
+        }
+
+        //The closed event is generated if the connection is lost: i.e. no power, cable unplugged, etc.
         void ProcessGpsClosedEventFromConnection(object sender, EventArgs e)
         {
-            //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
             if (MobileApplication.Current.Dispatcher.CheckAccess())
             {
-                //Note C# supports reentrent locks, so this thread can also call lock in StopRecording()
-                //lock (_gpsLock)
-                //{
+                UnhookGpsEvents();
+                _gpsConnection.GpsOpened += ProcessGpsOpenedEventFromConnection;
                 if (IsRecording)
                 {
                     StopRecording();
-                    //TODO - can we do these transitions from the gps thread?
-                    //Make sure we transition away from any pages that may have open objects
-                    if (PreviousPage is RecordTrackLogPage)
-                        TransitionToPreviousPage();
-                    if (PreviousPage is SetupTrackLogPage)
-                        TransitionToPreviousPage();
                 }
-                //}
+                MobileApplication.Current.Transition(MobileApplication.Current.Project.HomePage);
             }
             else
             {
                 MobileApplication.Current.Dispatcher.Invoke(new EventHandler(ProcessGpsClosedEventFromConnection),
                     System.Windows.Threading.DispatcherPriority.Normal, sender, e);
             }
-            
         }
 
         void ProcessGpsChangedEventFromConnection(object sender, EventArgs e)
         {
-            if (_gpsConnection.FixStatus == GpsFixStatus.Invalid ||
-                !LocationChanged(_gpsConnection))
+            if (!LocationChanged(_gpsConnection))
                 return;
-
-            //FIXME - Until I can fix locking,  I'm dispatching GPS events to the main UI thread.
             if (MobileApplication.Current.Dispatcher.CheckAccess())
             {
-                //lock (_gpsLock)
-                //{
+                if (_gpsConnection.FixStatus == GpsFixStatus.Invalid)
+                {
+                    DrawBoat(MostRecentLocation, _gpsConnection.Course, true);
+                    return;
+                }
+
                 if (IsRecording)
                 {
-                    //CreateWith()/Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
-                    CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
-                    CurrentGpsPoint.Save();
-                    CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
-                    MostRecentLocation = CurrentGpsPoint.Location;
+                    SaveGpsPoint();
                 }
                 else
                 {
@@ -442,9 +435,8 @@ namespace AnimalObservations
 #endif
                     MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
                 }
-                //}
                 if (OpenObservations.Count == 0)
-                    DrawBoat(MostRecentLocation, _gpsConnection.Course);
+                    DrawBoat(MostRecentLocation, _gpsConnection.Course, false);
             }
             else
             {
@@ -453,13 +445,19 @@ namespace AnimalObservations
             }
         }
 
+        private void SaveGpsPoint()
+        {
+            //CreateWith() and Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
+            CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
+            CurrentGpsPoint.Save();
+            CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
+            MostRecentLocation = CurrentGpsPoint.Location;
+        }
+
         private static bool LocationChanged(GpsConnection gpsConnection)
         {
             return (gpsConnection.GpsChangeType & GpsChangeType.Position) != 0;
         }
-
-
-        //public GpsDisplay 
 
         #endregion
 
@@ -467,6 +465,7 @@ namespace AnimalObservations
         #region Draw the boat
 
         private Image _boat;
+        private GraphicLayer _overlay;
 
         private void SetupBoatLayer()
         {
@@ -486,19 +485,30 @@ namespace AnimalObservations
                         };
 
             // add graphic layer
-            var overlay = new GraphicLayer();
-            MobileApplication.Current.Map.MapGraphicLayers.Add(overlay);
-            overlay.Children.Add(_boat);
+            _overlay = new GraphicLayer();
+            MobileApplication.Current.Map.MapGraphicLayers.Add(_overlay);
         }
 
-        private void DrawBoat(Coordinate location, double heading)
+        private void ShowBoat()
+        {
+            _overlay.Children.Add(_boat);
+        }
+
+        private void HideBoat()
+        {
+            _overlay.Children.Remove(_boat);
+        }
+
+        private void DrawBoat(Coordinate location, double heading, bool error)
         {
             //Only update the UI on the UI thread
             if (!_boat.Dispatcher.CheckAccess())
             {
-                _boat.Dispatcher.BeginInvoke((System.Threading.ThreadStart)(() => DrawBoat(location, heading)));
+                _boat.Dispatcher.BeginInvoke((System.Threading.ThreadStart)(() => DrawBoat(location, heading, error)));
                 return;
             }
+
+            _boat.Opacity = error ? .45 : 1;
 
             //pan map to center boat location
             Envelope env = MobileApplication.Current.Map.GetExtent();
@@ -519,7 +529,6 @@ namespace AnimalObservations
                 _boat.LayoutTransform = transformGroup;
             }
             _boat.Margin = new System.Windows.Thickness(point.X-24, point.Y-30, 0, 0);
-            
         }
 
         #endregion
