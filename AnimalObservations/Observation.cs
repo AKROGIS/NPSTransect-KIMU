@@ -56,14 +56,14 @@ namespace AnimalObservations
         }
         private int _distance;
 
-        public ObservableCollection<BirdGroup2> BirdGroups { get; private set; }
+        public ObservableCollection<BirdGroup> BirdGroups { get; private set; }
 
         #region Constructors
 
         private Observation()
         {
             //Create a default record to seed the datagrid, otherwise the datagrid shows no rows
-            BirdGroups = new ObservableCollection<BirdGroup2> { new BirdGroup2() };
+            BirdGroups = new ObservableCollection<BirdGroup> { new BirdGroup() };
         }
 
         //May return null if no feature is found with matching guid
@@ -146,8 +146,8 @@ namespace AnimalObservations
         private void LoadBirdGroups()
         {
             BirdGroups.Clear();
-            foreach (var birdGroup in BirdGroup.AllWithObservation(this))
-                BirdGroups.Add(new BirdGroup2(birdGroup));
+            foreach (var birdGroupFeature in BirdGroupFeature.AllWithObservation(this))
+                BirdGroups.Add(new BirdGroup(birdGroupFeature));
         }
 
         #endregion
@@ -191,14 +191,14 @@ namespace AnimalObservations
                 Error = errors.ToString();
                 return false;
             }
-            return SaveBirds();
+            return SaveBirdGroups();
         }
 
-        private bool SaveBirds()
+        private bool SaveBirdGroups()
         {
             bool failed = false;
-            foreach (BirdGroup2 bird in BirdGroups)
-                if (!bird.Save(this))
+            foreach (BirdGroup birdGroup in BirdGroups)
+                if (!birdGroup.Save(this))
                     failed = true;
             return !failed;
         }
@@ -212,8 +212,8 @@ namespace AnimalObservations
             //Feature.Delete(); 
             Feature.FeatureDataRow.Delete();
             Feature.SaveEdits();
-            foreach (BirdGroup2 bird in BirdGroups)
-                bird.Delete();
+            foreach (BirdGroup birdGroup in BirdGroups)
+                birdGroup.Delete();
         }
 
 

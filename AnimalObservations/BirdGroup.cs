@@ -1,224 +1,276 @@
-﻿#define BROKEN_WHERE_GUID
-
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.ComponentModel;
 using System.Text;
-using ESRI.ArcGIS.Mobile.Client;
-using ESRI.ArcGIS.Mobile.Geometries;
-using ESRI.ArcGIS.Mobile.MobileServices;
 
 namespace AnimalObservations
 {
-    public class BirdGroup
+    //BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
+    public class BirdGroup : IDataErrorInfo
     {
 
-        //TODO - sort out the difference between:
-        //  1) aborting the creation of a new object
-        //  2) canceling changes to an existing object
-        //  3) deleting an existing object
-
-        internal static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("BirdGroups");
-        private static readonly Dictionary<Guid, BirdGroup> BirdGroups = new Dictionary<Guid, BirdGroup>();
-
-        //These are used in XAML data binding so they must be public properties
-        //One-Time, One-Way bindings:
-        //NOTE - currently not used, since datagrid uses enums in BirdGroup2 for picklists
-        public static IDictionary<string, string> BehaviorDomain { get; private set; }
-        public static IDictionary<string, string> SpeciesDomain { get; private set; }
-
-
-        private Feature Feature { get; set; }
-        internal Guid Guid { get; private set; }
-        internal Observation Observation { get; private set; }
-        internal string Error { get; set; }
-
         //public properties for WPF/XAML interface binding
-        public int Size { get; set; }
-        public char Behavior { get; set; }
-        public char Species { get; set; }
-        public string Comments { get; set; }
+        public int GroupSize { get; set; }
+        public BirdGroupBehavior Behavior { get; set; }
+        public BirdGroupSpecies Species { get; set; }
+        public string Comment { get; set; }
+
+        //public int GroupSize
+        //{
+        //    get
+        //    {
+        //        return _groupSize;
+        //    }
+        //    set
+        //    {
+        //        if (value <= 0)
+        //            throw new ArgumentOutOfRangeException("value", "GroupSize must be positive.");
+        //        if (value >= 100)
+        //            throw new ArgumentOutOfRangeException("value", "GroupSize must be less than 100.");
+        //        _groupSize = value;
+        //    }
+        //}
+        //private int _groupSize;
+
+
+        private BirdGroupFeature BirdGroupFeature { get; set; }
 
 
         #region Constructors
 
-        //Class Constructor
-        static BirdGroup()
+        public BirdGroup()
         {
-            BehaviorDomain = MobileUtilities.GetCodedValueDictionary<string>(FeatureLayer, "Behavior");
-            SpeciesDomain = MobileUtilities.GetCodedValueDictionary<string>(FeatureLayer, "Species");
         }
 
-        //Instance Constructor  - not permitted, use static create/from methods.
-        private BirdGroup()
-        { }
-
-        internal static IEnumerable<BirdGroup> AllWithObservation(Observation observation)
+        internal BirdGroup(BirdGroupFeature birdGroupFeature)
         {
-            var results = new List<BirdGroup>();
-            //First get all the matching bird groups that have already been loaded
-            results.AddRange(BirdGroups.Values.Where(bird => bird.Observation == observation));
-
-            //Next search the database for matching birdgroups, but only load/add them if they are not already loaded.
-#if BROKEN_WHERE_GUID
-            int columnIndex = FeatureLayer.Columns.IndexOf("ObservationID");
-            var rows = MobileUtilities.GetFeatureRows(FeatureLayer, observation.Guid, columnIndex);
-#else
-            string whereClause = string.Format("ObservationID = '{{{0}}}'", observation.Guid);
-            var rows = MobileUtilities.GetFeatureRows(FeatureLayer, whereClause)
-#endif
-            //We need to enable editing before we can check the 
-            //foreach (var feature in birds)
-            //    if (!feature.IsEditing)
-            //        feature.StartEditing();
-
-            results.AddRange(from birdFeature in rows
-                             where !BirdGroups.ContainsKey(new Guid(birdFeature.GlobalId.ToByteArray()))
-                             select FromFeature(new Feature(birdFeature)));
-            return results;
-        }
-
-        //May return null if no feature is found within extents
-        internal static BirdGroup FromEnvelope(Envelope extents)
-        {
-            //Check to see if it is in our cache, if not, then load from database
-            return BirdGroups.Values.FirstOrDefault(birds => birds.Feature.FeatureDataRow.Geometry.Within(extents)) ??
-                   FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
-        }
-
-        internal static BirdGroup FromObservation(Observation observation)
-        {
-            if (observation == null)
-                throw new ArgumentNullException("observation");
-
-            var birdGroup = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
-            if (birdGroup == null)
-                throw new ApplicationException("Database returned null when asked to create a new feature");
-            birdGroup.Observation = observation;
-            return birdGroup;
-        }
-
-        private static BirdGroup FromFeature(Feature feature)
-        {
-            if (feature == null)
-                return null;
-            if (!feature.IsEditing)
-                feature.StartEditing();
-            var birdGroup = new BirdGroup { Feature = feature };
-            birdGroup.LoadAttributes();
-            BirdGroups[birdGroup.Guid] = birdGroup;
-            return birdGroup;
-        }
-
-        private void LoadAttributes()
-        {
-            //BirdGroups do not have a primary key GUID (i.e. BirdGroupID), so use GlobalID for new and existing
-            Guid = new Guid(Feature.FeatureDataRow.GlobalId.ToByteArray());
-
-            //For new features, ObservationID will be null, so we can't load an observation feature from the database
-            //For new features, We will rely on the caller to set the Observation property
-            if (Feature.FeatureDataRow["ObservationID"] is Guid)
-                Observation = Observation.FromGuid((Guid)Feature.FeatureDataRow["ObservationID"]);
-
-            //Simple Attributes
-            if (Feature.FeatureDataRow["GroupSize"] is int)
-                Size = (int)Feature.FeatureDataRow["GroupSize"];
-            if (Feature.FeatureDataRow["Behavior"] is string)
-                Behavior = ((string)Feature.FeatureDataRow["Behavior"])[0];
-            if (Feature.FeatureDataRow["Species"] is string)
-                Species = ((string)Feature.FeatureDataRow["Species"])[0];
-            Comments = Feature.FeatureDataRow["Comments"] as string;
-        }
-
-        #endregion
-
-        #region Saving/Deleting
-
-        internal bool ValidateBeforeSave()
-        {
-            var errors = new StringBuilder();
-            if (Size < 1)
-                errors.Append("Bird group size must be a positive integer.\n");
-            if (Size > 99)
-                errors.Append("Bird group size cannot be greater than 99.\n");
-            if (Behavior != 'W' && Behavior != 'F')
-                errors.Append("Bird group behaviour must be 'Water' or 'Flying'.\n");
-            Error = errors.ToString();
-            return errors.Length == 0;
-        }
-
-        internal bool Save()
-        {
-            //Toggle one of the following lines for choice of reference system
-            Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.BoatHeading);
-            //Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.TransectHeading);
-            Feature.FeatureDataRow["ObservationID"] = Observation.Guid;
-            Feature.FeatureDataRow["GroupSize"] = Size;
-            Feature.FeatureDataRow["Behavior"] = Behavior.ToString();
-            Feature.FeatureDataRow["Species"] = Species.ToString();
-            Feature.FeatureDataRow["Comments"] = Comments ?? (object)DBNull.Value;
-            if (!Feature.SaveEdits())
+            GroupSize = birdGroupFeature.Size;
+            switch (birdGroupFeature.Species)
             {
-                var errors = new StringBuilder();
-                if (!Feature.HasValidGeometry)
-                    errors.Append("Geometry is invalid.\n");
-                if (!Feature.HasValidAttributes)
-                    errors.Append("One or more attributes are invalid.\n");
-                Error = errors.ToString();
-                return false;
-            }
-            Error = string.Empty;
-            return true;
-        }
-
-        private Point GetLocation(BirdGroupLocationRelativeTo angleBasis)
-        {
-            Azimuth azimuth;
-            switch (angleBasis)
-            {
-                case BirdGroupLocationRelativeTo.TransectHeading:
-                    try
-                    {
-                        //If this throws an exception, then fall back to the boat bearing
-                        azimuth = Observation.GpsPoint.TrackLog.Transect.NormalizedAzimuth(Observation.GpsPoint);
-                    }
-                    catch(Exception ex)
-                    {
-                        Trace.TraceError("Unable to compute azimuth of transect.  Using boat's azimuth.\n{0}", ex);
-                        azimuth = Observation.GpsPoint.Bearing;
-                    }
+                case 'M':
+                case 'm':
+                    Species = BirdGroupSpecies.Marbled;
+                    break;
+                case 'K':
+                case 'k':
+                    Species = BirdGroupSpecies.Kitlitz;
+                    break;
+                case 'U':
+                case 'u':
+                    Species = BirdGroupSpecies.Unidentified;
                     break;
                 default:
-                    azimuth = Observation.GpsPoint.Bearing;
+                    Species = BirdGroupSpecies.Pending;
                     break;
             }
-
-            //Add observation angle: clockwise from stern(0 = stern, 90 = port 180 = bow, 270 = starboard)
-            azimuth += (Observation.Angle - 180);
-
-            double birdX = Observation.GpsPoint.Location.X + Observation.Distance * Math.Cos(azimuth.ToTrigRadians());
-            double birdY = Observation.GpsPoint.Location.Y + Observation.Distance * Math.Sin(azimuth.ToTrigRadians());
-            return new Point(birdX, birdY);
-        }
-
-        internal void Delete()
-        {
-            BirdGroups.Remove(Guid);
-            //per docs: Feature.Deletes the feature data row corresponding to this feature and saves the changes to the feature layer
-            //However this does not work.  However Feature.FeatureDataRow.Delete() does work.
-            //Feature.Delete(); 
-            Feature.FeatureDataRow.Delete();
-            Feature.SaveEdits();
+            switch (birdGroupFeature.Behavior)
+            {
+                case 'W':
+                case 'w':
+                    Behavior = BirdGroupBehavior.Water;
+                    break;
+                case 'F':
+                case 'f':
+                    Behavior = BirdGroupBehavior.Flying;
+                    break;
+                default:
+                    Species = BirdGroupSpecies.Pending;
+                    break;
+            }
+            Comment = birdGroupFeature.Comments;
+            BirdGroupFeature = birdGroupFeature;
         }
 
         #endregion
 
-        enum BirdGroupLocationRelativeTo
+
+        #region Save/Delete
+
+        public void Delete()
         {
-            BoatHeading,
-            TransectHeading
+            if (BirdGroupFeature != null)
+                BirdGroupFeature.Delete();
         }
 
+        public bool Save(Observation observation)
+        {
+            if (BirdGroupFeature == null)
+                BirdGroupFeature = BirdGroupFeature.FromObservation(observation);
+            BirdGroupFeature.Size = GroupSize;
+            BirdGroupFeature.Behavior = Behavior.ToString()[0];
+            BirdGroupFeature.Species = Species.ToString()[0];
+            BirdGroupFeature.Comments = Comment;
+            return BirdGroupFeature.Save();
+        }
+
+        #endregion
+
+
+        #region autogrid population with keyboard entry
+        //TODO - remove this key code stuff
+
+        //internal bool IsValid
+        //{
+        //    get
+        //    {
+        //        return Behavior != BirdGroupBehavior.Pending &&
+        //               GroupSize > 0 &&
+        //               GroupSize < 100;
+        //    }
+        //}
+
+        //internal bool IsComplete
+        //{
+        //    get
+        //    {
+        //        return Behavior != BirdGroupBehavior.Pending &&
+        //               Species != BirdGroupSpecies.Pending &&
+        //               (9 < GroupSize || (0 < GroupSize && !_previousCharacterWasDigit));
+        //    }
+        //}
+
+        //public void Reset()
+        //{
+        //    GroupSize = default(int);
+        //    Behavior = default(BirdGroupBehavior);
+        //    Species = default(BirdGroupSpecies);
+        //    Comment = default(string);
+        //    BirdGroupFeature = default(BirdGroupFeature);
+        //    _previousCharacterWasDigit = default(bool);
+        //}
+
+        //internal static bool RecognizeKey(char character)
+        //{
+        //    return "0123456789WwFfMmKkUu".Contains(character.ToString());
+        //}
+
+        //internal bool AcceptKey(char character)
+        //{
+        //    if (!RecognizeKey(character))
+        //        goto invalidNonDigit;
+
+        //    //Digits
+        //    if (Char.IsDigit(character))
+        //    {
+        //        int digit = int.Parse(character.ToString());
+
+        //        //reject leading zeros
+        //        if (digit == 0 && !_previousCharacterWasDigit)
+        //            goto invalidDigit;
+
+        //        //reject digit-nondigit-digit sequence
+        //        if (GroupSize > 0 && !_previousCharacterWasDigit)
+        //            goto invalidDigit;
+
+        //        //reject third digit
+        //        if (GroupSize > 9)
+        //            goto invalidDigit;
+
+        //        //accept all other digits
+        //        GroupSize = GroupSize * 10 + digit;
+        //        goto validDigit;
+        //    }
+
+        //    //Recognized Non-digits
+        //    switch (character)
+        //    {
+        //        case 'W':
+        //        case 'w':
+        //            if (Behavior != BirdGroupBehavior.Pending)
+        //                goto invalidNonDigit;
+        //            Behavior = BirdGroupBehavior.Water;
+        //            goto validNonDigit;
+        //        case 'F':
+        //        case 'f':
+        //            if (Behavior != BirdGroupBehavior.Pending)
+        //                goto invalidNonDigit;
+        //            Behavior = BirdGroupBehavior.Flying;
+        //            goto validNonDigit;
+        //        case 'M':
+        //        case 'm':
+        //            if (Species != BirdGroupSpecies.Pending)
+        //                goto invalidNonDigit;
+        //            Species = BirdGroupSpecies.Marbled;
+        //            goto validNonDigit;
+        //        case 'K':
+        //        case 'k':
+        //            if (Species != BirdGroupSpecies.Pending)
+        //                goto invalidNonDigit;
+        //            Species = BirdGroupSpecies.Kitlitz;
+        //            goto validNonDigit;
+        //        case 'U':
+        //        case 'u':
+        //            if (Species != BirdGroupSpecies.Pending)
+        //                goto invalidNonDigit;
+        //            Species = BirdGroupSpecies.Unidentified;
+        //            goto validNonDigit;
+        //        default:
+        //            goto invalidNonDigit;
+        //    }
+        //    invalidDigit:
+        //        _previousCharacterWasDigit = true;
+        //        return false;
+        //    validDigit:
+        //        _previousCharacterWasDigit = true;
+        //        return true;
+        //    invalidNonDigit:
+        //        _previousCharacterWasDigit = false;
+        //        return false;
+        //    validNonDigit:
+        //        _previousCharacterWasDigit = false;
+        //        return true;
+        //}
+
+        //private bool _previousCharacterWasDigit;
+
+        #endregion
+
+
+        #region IDataErrorInfo Members
+
+        public string Error
+        {
+            get
+            {
+                var error = new StringBuilder();
+
+                // iterate over all of the properties
+                // of this object - aggregating any validation errors
+                PropertyDescriptorCollection props = TypeDescriptor.GetProperties(this);
+                foreach (PropertyDescriptor prop in props)
+                {
+                    string propertyError = this[prop.Name];
+                    if (propertyError != string.Empty)
+                    {
+                        error.Append((error.Length != 0 ? ", " : "") + propertyError);
+                    }
+                }
+                //Check the Error property of the underlying database object
+                if (BirdGroupFeature != null && !string.IsNullOrEmpty(BirdGroupFeature.Error))
+                    error.Append((error.Length != 0 ? ", " : "") + BirdGroupFeature.Error);
+                return error.ToString();
+            }
+        }
+
+        public string this[string columnName]
+        {
+            get
+            {
+                // apply property level validation rules
+                if (columnName == "Behavior")
+                {
+                    if (Behavior == BirdGroupBehavior.Pending)
+                        return "Behavior cannot be Pending";
+                }
+
+                if (columnName == "GroupSize")
+                {
+                    if (GroupSize <= 0 || GroupSize >= 100)
+                        return "GroupSize must be positive and less than 100";
+                }
+
+                return "";
+            }
+        }
+
+        #endregion
     }
 }

@@ -187,9 +187,9 @@ namespace AnimalObservations
             //Exceptions may get thrown by DB access in xx.FromEnvelope(), let the app handle them
             Observation observation = null;
             //Try and find a bird group in this extent
-            BirdGroup birdGroup = BirdGroup.FromEnvelope(extents);
-            if (birdGroup != null)
-                observation =  birdGroup.Observation;
+            BirdGroupFeature birdGroupFeature = BirdGroupFeature.FromEnvelope(extents);
+            if (birdGroupFeature != null)
+                observation =  birdGroupFeature.Observation;
 
             //If we didn't get a birdgroup, search for observations in this extent
             return observation ?? Observation.FromEnvelope(extents);

@@ -578,9 +578,9 @@ namespace AnimalObservations
                 TrackLog trackLog = TrackLog.FromTransect(transect);
                 GpsPoint gpsPoint = GpsPoint.FromTrackLog(trackLog);
                 Observation observation = Observation.FromGpsPoint(gpsPoint);
-                BirdGroup birdGroup = BirdGroup.FromObservation(observation);
+                BirdGroupFeature birdGroupFeature = BirdGroupFeature.FromObservation(observation);
                 //Unwind - destroy the temporary objects
-                birdGroup.Delete();
+                birdGroupFeature.Delete();
                 observation.Delete();
                 gpsPoint.Delete();
                 trackLog.Delete();
