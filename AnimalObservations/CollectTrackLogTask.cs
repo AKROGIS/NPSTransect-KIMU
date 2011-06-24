@@ -215,12 +215,14 @@ namespace AnimalObservations
 
         #region Manage Observation Queue
 
+        //public for XAML
         public ObservableCollection<Observation> OpenObservations { get; private set; }
 
+        //public for XAML
         public Observation ActiveObservation
         {
             get { return _activeObservation; }
-            private set
+            set
             { 
                 if (value != _activeObservation)
                 {

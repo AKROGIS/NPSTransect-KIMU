@@ -171,7 +171,12 @@ namespace AnimalObservations
                 OnPropertyChanged("CanSave");
             }
             if (Feature.Geometry.CurrentPart.Count % 4 == 0)
+            {
                 QuickSave();
+                //Send this again, because it is occasionally missed when fired above.
+                OnPropertyChanged("CanSave");
+            }
+
         }
 
         internal bool Save()
