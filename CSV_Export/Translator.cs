@@ -17,13 +17,15 @@ namespace CSV_Export
         private struct Line : IComparable
         {
             internal DateTime Date { private get; set; }
+            internal DateTime TrackDate { private get; set; }
             internal string Text { get; set; }
 
 
             public int CompareTo(object obj)
             {
                 var other = (Line)obj;
-                return Date.CompareTo(other.Date);
+                int dateCompare = Date.CompareTo(other.Date);
+                return dateCompare == 0 ? TrackDate.CompareTo(other.TrackDate) : dateCompare;
             }
         }
 
@@ -87,6 +89,7 @@ namespace CSV_Export
 
             var table2 = (ITable)rqtFactory.Open(relationship2, false, null, null, String.Empty, false, true);
 
+
             IRelationshipClass relationship3 = memRelClassFactory.Open("Track_BG_Obs_Gps",
                 tracks, "TrackID", (IObjectClass)table2, "GpsPoints.TrackID",
                 String.Empty, String.Empty, esriRelCardinality.esriRelCardinalityOneToOne);
@@ -149,6 +152,7 @@ namespace CSV_Export
                 {
                     var utm = (IPoint)row.Value[1];
                     var localDateTime = (DateTime) row.Value[6]; //try 5 to verify 24 time
+                    var trackDateTime = (DateTime) row.Value[34];
                     string date = localDateTime.ToString("yyyy-MM-dd");
                     string time = localDateTime.ToString("HH:mm:ss");
                     string transect = row.Value[40].ToString();
@@ -161,7 +165,7 @@ namespace CSV_Export
                     sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",{3},", row.Value[24], row.Value[42], row.Value[41], row.Value[12]);
                     sb.AppendFormat("{0},{1},{2},\"{3}\"", row.Value[8], row.Value[7], transectLengths[transect], row.Value[25]);
                     sb.Append(",,");
-                    lines.Add(new Line { Date = localDateTime, Text = sb.ToString() });
+                    lines.Add(new Line { Date = localDateTime, TrackDate = trackDateTime, Text = sb.ToString() });
                 }
             }
             lines.Sort();
