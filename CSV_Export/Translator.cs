@@ -10,9 +10,9 @@ namespace CSV_Export
 {
     class Translator
     {
-        internal int Year { get; set; }
-        internal string WorkspacePath { get; set; }
-        internal Stream Output { get; set; }
+        internal int Year { private get; set; }
+        internal string WorkspacePath { private get; set; }
+        internal Stream Output { private get; set; }
 
         private struct Line : IComparable
         {
@@ -27,6 +27,12 @@ namespace CSV_Export
                 int dateCompare = Date.CompareTo(other.Date);
                 return dateCompare == 0 ? TrackDate.CompareTo(other.TrackDate) : dateCompare;
             }
+        }
+
+        private struct Observation
+        {
+            internal string Data { get; set; }
+            internal string Comment { get; set; }            
         }
 
         internal void Translate()
@@ -57,7 +63,7 @@ namespace CSV_Export
             }
         }
 
-        internal void WriteTable(StreamWriter tw, IFeatureWorkspace workspace, string dateWhereClause)
+        private static void WriteTable(StreamWriter tw, IFeatureWorkspace workspace, string dateWhereClause)
         {
             //Get the Featureclasses
             IFeatureClass gpsPoints = workspace.OpenFeatureClass("GpsPoints");
@@ -76,30 +82,40 @@ namespace CSV_Export
             //Must create the relationship class in memory (don't load from fgdb), else NO outer join.
             //IRelationshipClass rc = featureWorkspace.OpenRelationshipClass("GpsPoint_Observation");
 
-            IRelationshipClass relationship1 = memRelClassFactory.Open("Obs_Gps",
-                observations, "GpsPointID", gpsPoints, "GpsPointID",
-                "", "", esriRelCardinality.esriRelCardinalityOneToOne);
+            // You can't do an left outer join with a one-to-many relationship
+            //(many-to-one relationships are not supported and right outer joins are not supported)
+            // must set first parameter to false to make the many table the sourece (i.e. to get all the records in the many table)
+            // you must leave the first parameter to true to get all the records in the left table for the outer join.
+            //
+            //Solution is to create two tables and do the join in my code.  Yuck!
 
-            //Last parameter must be true to get outer join, last parameter must be true to get sorting.
-            var table1 = (ITable)rqtFactory.Open(relationship1, false, null, null, String.Empty, false, true);
+            IRelationshipClass relationship1 = memRelClassFactory.Open("Obs_Bg",
+                observations, "ObservationID", birdGroups, "ObservationID",
+                String.Empty, String.Empty, esriRelCardinality.esriRelCardinalityOneToMany);
 
-            IRelationshipClass relationship2 = memRelClassFactory.Open("BG_Obs_Gps",
-                birdGroups, "ObservationID", (IObjectClass)table1, "Observations.ObservationID",
+            //Last parameter must be true to get a left outer join (right outer join if first param is false).
+            //if first parameter is false, then tables are swapped.  Must swap tables to get many to 1 (source/origin/left to dest/foriegn/right) 
+            var table1 = (ITable)rqtFactory.Open(relationship1, false, null, null, String.Empty, false, false);
+
+#if DEBUG
+            tw.WriteLine("table1"); DebugPrintTable(tw, table1);
+#endif
+            var observationData = GetObservations(table1);
+
+            IRelationshipClass relationship2 = memRelClassFactory.Open("Gps_Tracks",
+                gpsPoints, "TrackID", tracks, "TrackID", 
                 String.Empty, String.Empty, esriRelCardinality.esriRelCardinalityOneToOne);
+            //Last parameter must be true in order to do a query on the table.  Observed, not documented.
+            var table2 = (ITable)rqtFactory.Open(relationship2, true, null, null, String.Empty, false, true);
 
-            var table2 = (ITable)rqtFactory.Open(relationship2, false, null, null, String.Empty, false, true);
-
-
-            IRelationshipClass relationship3 = memRelClassFactory.Open("Track_BG_Obs_Gps",
-                tracks, "TrackID", (IObjectClass)table2, "GpsPoints.TrackID",
-                String.Empty, String.Empty, esriRelCardinality.esriRelCardinalityOneToOne);
-
-            var table3 = (ITable)rqtFactory.Open(relationship3, false, null, null, String.Empty, false, true);
-
-
-            //query must have a where clause or else the postfix will be ignored
+#if DEBUG
+            tw.WriteLine("table2"); DebugPrintTable(tw, table2);
+#endif
+            //filter results to only the year requested.
             var query = new QueryFilter {WhereClause = dateWhereClause};
-            ((IQueryFilterDefinition)query).PostfixClause = "ORDER BY GpsPoints.Time_local";
+            //Query does not sort correctly when doing outer joins
+            //Can't use query when sorting by time point time and transect start
+            //((IQueryFilterDefinition)query).PostfixClause = "ORDER BY GpsPoints.Time_local";
 
             tw.WriteLine(
                 "TRANSECT_ID,DATE_LOCAL,TIME_LOCAL,VESSEL,"+
@@ -118,15 +134,15 @@ namespace CSV_Export
             using (var comReleaser = new ComReleaser())
             {
                 //ICursor is a one pass object.  We search twice, once to get tracklengths by transect;
-                ICursor cursor = table3.Search(query, true);
+                ICursor cursor = table2.Search(query, true);
                 comReleaser.ManageLifetime(cursor);
                 IRow row;
                 while ((row = cursor.NextRow()) != null)
                 {
-                    string transect = row.Value[40].ToString();
-                    bool ontransect = Boolean.Parse(row.Value[42].ToString());
-                    string trackId = row.Value[29].ToString();
-                    var tracklength = (double)row.Value[28];
+                    string transect = row.Value[27].ToString();
+                    bool ontransect = Boolean.Parse(row.Value[29].ToString());
+                    string trackId = row.Value[26].ToString();
+                    var tracklength = (double)row.Value[15];
                     if (!lengths.ContainsKey(transect))
                         lengths[transect] = new Dictionary<string, double>();
                     //skip tracks I've already seen
@@ -145,27 +161,33 @@ namespace CSV_Export
                     }
                 }
 
+                var emptyObservationList = new List<Observation>{new Observation{Data = ",,,,", Comment=""}};
 
                 //Second search to format output
-                cursor = table3.Search(query, true);
+                cursor = table2.Search(query, true);
                 while ((row = cursor.NextRow()) != null)
                 {
                     var utm = (IPoint)row.Value[1];
-                    var localDateTime = (DateTime) row.Value[6]; //try 5 to verify 24 time
-                    var trackDateTime = (DateTime) row.Value[34];
+                    var localDateTime = (DateTime) row.Value[6];
+                    var trackDateTime = (DateTime) row.Value[21];
                     string date = localDateTime.ToString("yyyy-MM-dd");
                     string time = localDateTime.ToString("HH:mm:ss");
-                    string transect = row.Value[40].ToString();
-                    var sb = new StringBuilder();
-                    sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", transect, date, time, row.Value[30]);
-                    sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", row.Value[31], row.Value[32], row.Value[33], row.Value[38]);
-                    sb.AppendFormat("\"{0}\",{1},{2},{3},", row.Value[37], row.Value[36], row.Value[3], row.Value[4]);
-                    sb.AppendFormat("{0},{1},{2},{3},", utm.X, utm.Y, row.Value[10], row.Value[11]);
-                    sb.AppendFormat("{0},{1},\"{2}\",{3},", row.Value[16], row.Value[17], row.Value[22], row.Value[23]);
-                    sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",{3},", row.Value[24], row.Value[42], row.Value[41], row.Value[12]);
-                    sb.AppendFormat("{0},{1},{2},\"{3}\"", row.Value[8], row.Value[7], transectLengths[transect], row.Value[25]);
-                    sb.Append(",,");
-                    lines.Add(new Line { Date = localDateTime, TrackDate = trackDateTime, Text = sb.ToString() });
+                    string transect = row.Value[27].ToString();
+                    object gpsId = row.Value[13];
+                    List<Observation> observationList = observationData.ContainsKey(gpsId) ? observationData[gpsId] : emptyObservationList;
+                    foreach (var observation in observationList)
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", transect, date, time, row.Value[17]);
+                        sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", row.Value[18], row.Value[19], row.Value[20], row.Value[25]);
+                        sb.AppendFormat("\"{0}\",{1},{2},{3},", row.Value[24], row.Value[23], row.Value[3], row.Value[4]);
+                        sb.AppendFormat("{0},{1},{2},{3},", utm.X, utm.Y, row.Value[10], row.Value[11]);
+                        sb.AppendFormat("{0},", observation.Data);
+                        sb.AppendFormat("\"{0}\",\"{1}\",{2},", row.Value[29], row.Value[28], row.Value[12]);
+                        sb.AppendFormat("{0},{1},{2},{3},", row.Value[8], row.Value[7], transectLengths[transect], observation.Comment);
+                        sb.Append(",,");
+                        lines.Add(new Line { Date = localDateTime, TrackDate = trackDateTime, Text = sb.ToString() });                        
+                    }
                 }
             }
             lines.Sort();
@@ -173,7 +195,7 @@ namespace CSV_Export
                 tw.WriteLine(line.Text);
         }
 
-        public static IWorkspace FileGdbWorkspaceFromPath(String path)
+        private static IWorkspace FileGdbWorkspaceFromPath(String path)
         {
             Type factoryType = Type.GetTypeFromProgID("esriDataSourcesGDB.FileGDBWorkspaceFactory");
             var workspaceFactory = (IWorkspaceFactory)Activator.CreateInstance(factoryType);
@@ -185,5 +207,54 @@ namespace CSV_Export
             //requires ArcGIS 10+ and reference to ESRI.ArcGIS.Version.dll
             ESRI.ArcGIS.RuntimeManager.BindLicense(ESRI.ArcGIS.ProductCode.EngineOrDesktop);
         }
+
+        private static Dictionary<object,List<Observation>> GetObservations(ITable table)
+        {
+            var observationData = new Dictionary<object, List<Observation>>();
+            using (var comReleaser = new ComReleaser())
+            {
+                ICursor cursor = table.Search(null, true);
+                comReleaser.ManageLifetime(cursor);
+                IRow row;
+                while ((row = cursor.NextRow()) != null)
+                {
+                    string data = string.Format("{0},{1},\"{2}\",{3},\"{4}\"", row.Value[10], row.Value[11], row.Value[3], row.Value[4], row.Value[5]);
+                    string comment = string.Format("\"{0}\"", row.Value[6]);
+                    object gpsId = row.Value[12];
+                    if (observationData.ContainsKey(gpsId))
+                        observationData[gpsId].Add(new Observation {Data = data, Comment = comment});
+                    else
+                        observationData[gpsId] = new List<Observation>
+                                                     {new Observation {Data = data, Comment = comment}};
+                }
+            }
+            return observationData;
+        }
+
+#if DEBUG
+        static private void DebugPrintTable(StreamWriter tw, ITable table)
+        {
+            using (var comReleaser = new ComReleaser())
+            {
+                ICursor cursor = table.Search(null, true);
+                comReleaser.ManageLifetime(cursor);
+                IRow row;
+                var sb = new StringBuilder();
+                int c = table.Fields.FieldCount;
+
+                for (int i = 0; i < c; i++)
+                    sb.AppendFormat("\"{0}\",", table.Fields.Field[i].Name);
+                tw.WriteLine(sb.ToString());
+
+                while ((row = cursor.NextRow()) != null)
+                {
+                    sb = new StringBuilder();
+                    for (int i = 0; i < c; i++)
+                        sb.AppendFormat("\"{0}\",", row.Value[i]);
+                    tw.WriteLine(sb.ToString());
+                }
+            }
+        }
+#endif
     }
 }
