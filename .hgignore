@@ -7,7 +7,7 @@ glob:AnimalObservations/*.pfx
 glob:AnimalObservations/AnimalObservations.csproj.*
 glob:AnimalObservations/Deployment/*.zip
 syntax: glob
-AnimalObservations.5.1.ReSharper.user
 CSV_Export/bin
 CSV_Export/obj
 CSV_Export/CSV_Export.csproj.*
+*.user
