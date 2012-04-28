@@ -31,7 +31,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\..\..\..\..\..\..\..\ProgramData\ESRI\ArcGIS Mobile\Extensions\</OutputPath>
-    <DefineConstants>TRACE;BROKEN_WHERE_GUID</DefineConstants>
+    <DefineConstants>TRACE;BROKEN_WHERE_GUID GPSINANCHORAGE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>

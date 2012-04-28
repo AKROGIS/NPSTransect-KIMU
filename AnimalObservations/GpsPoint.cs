@@ -155,8 +155,14 @@ namespace AnimalObservations
             Bearing = 0;
 #elif GPSINANCHORAGE
             //Offset Regan's office to end of Transect MainBay19
-            Latitude -= (61.217311111 - 58.495580); //2.7618;
-            Longitude += (149.885638889 - 135.964885); //13.9988;
+            //Latitude -= (61.217311111 - 58.477595);
+            //Longitude += (149.885638889 - 136.000886);
+            //Latitude -= (61.21725 - 58.479367);
+            //Longitude += (149.88487 - 136.002424);
+            //Latitude -= (61.21740 - 58.479993);
+            //Longitude += (149.88493 - 136.002623);
+            Latitude -= (61.2174 - 58.480122);
+            Longitude += (149.88493 - 136.003435);
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 #elif GPSINJUNEAU
             //Offset SEAN Juneau office to end of Transect MainBay19

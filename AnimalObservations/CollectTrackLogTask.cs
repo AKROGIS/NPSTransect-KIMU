@@ -385,8 +385,14 @@ namespace AnimalObservations
                     double longitude = _gpsConnection.Longitude;
 #if GPSINANCHORAGE
                     //Offset Regan's office to end of Transect MainBay19
-                    latitude -= (61.217311111 - 58.495580);
-                    longitude += (149.885638889 - 135.964885);
+                    //latitude -= (61.217311111 - 58.477595);
+                    //longitude += (149.885638889 - 136.000886);
+                    //latitude -= (61.21725 - 58.479367);
+                    //longitude += (149.88487 - 136.002424);
+                    //latitude -= (61.2174 - 58.479993);
+                    //longitude += (149.88493 - 136.002623);
+                    latitude -= (61.2174 - 58.480122);
+                    longitude += (149.88493 - 136.003435);
 #elif GPSINJUNEAU
                     //Offset SEAN Juneau office to end of Transect MainBay19
                     latitude -= (58.377663888 - 58.495580);
