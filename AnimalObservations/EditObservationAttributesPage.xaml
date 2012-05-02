@@ -24,17 +24,17 @@
             <Style TargetType="Label">
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="20"/>
                 <Setter Property="Padding" Value="10,5"/>
             </Style>
             <Style TargetType="TextBox">
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="20"/>
                 <Setter Property="Margin" Value="10"/>
             </Style>
             <Style TargetType="toolkit:DataGrid">
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="20"/>
                 <Setter Property="Margin" Value="10"/>
             </Style>
         </DockPanel.Resources>
@@ -61,13 +61,13 @@
                     </Style>
                 </toolkit:DataGrid.Resources>
                 <toolkit:DataGrid.Columns>
-                    <toolkit:DataGridTextColumn Header="Group Size" Binding="{Binding GroupSize}"/>
-                    <toolkit:DataGridComboBoxColumn Header="Behavior" SelectedItemBinding="{Binding Behavior}" ItemsSource="{Binding Source={StaticResource GetEnumBehavior}}"/>
-                    <toolkit:DataGridComboBoxColumn Header="Species" SelectedItemBinding="{Binding Species}" ItemsSource="{Binding Source={StaticResource GetEnumSpecies}}"/>
-                    <toolkit:DataGridTextColumn Header="Comment" Binding="{Binding Comment}" MinWidth="500" />
+                    <toolkit:DataGridTextColumn Header="Group Size" Binding="{Binding GroupSize}" MinWidth="90" />
+                    <toolkit:DataGridComboBoxColumn Header="Behavior" SelectedItemBinding="{Binding Behavior}" ItemsSource="{Binding Source={StaticResource GetEnumBehavior}}" MinWidth="70" />
+                    <toolkit:DataGridComboBoxColumn Header="Species" SelectedItemBinding="{Binding Species}" ItemsSource="{Binding Source={StaticResource GetEnumSpecies}}" MinWidth="70" />
+                    <toolkit:DataGridTextColumn Header="Comment" Binding="{Binding Comment}" MinWidth="500" Width="*" />
                 </toolkit:DataGrid.Columns>
             </toolkit:DataGrid>
-            <Label Grid.Column="1" Grid.Row="3" Name="errorLabel" Margin="10"  FontStyle="Italic" FontSize="11" Foreground="Red" FontWeight="Normal"/>
+            <Label Grid.Column="1" Grid.Row="3" Name="errorLabel" Margin="10"  FontStyle="Italic" FontSize="22" Foreground="DarkRed" FontWeight="Bold"/>
         </Grid>
 
         <StackPanel x:Name="queueDisplay" HorizontalAlignment="Stretch"  DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding Task.OpenObservations.Count, Converter={StaticResource CountToVisibilityConverter} }">
