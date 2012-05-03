@@ -34,7 +34,7 @@ namespace AnimalObservations
                     break;
                 case 'K':
                 case 'k':
-                    Species = BirdGroupSpecies.Kitlitz;
+                    Species = BirdGroupSpecies.Kittlitz;
                     break;
                 case 'U':
                 case 'u':

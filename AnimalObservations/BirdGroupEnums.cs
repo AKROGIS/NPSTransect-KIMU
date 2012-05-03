@@ -10,7 +10,7 @@
     public enum BirdGroupSpecies
     {
         Pending,
-        Kitlitz,
+        Kittlitz,
         Marbled,
         Unidentified
     }
