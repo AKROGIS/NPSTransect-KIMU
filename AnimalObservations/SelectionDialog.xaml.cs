@@ -6,10 +6,13 @@ namespace AnimalObservations
     {
         public SelectionAction Action { get; private set; }
 
-        public SelectionDialog()
+        public SelectionDialog(Observation observation)
         {
+            Observation = observation;
             InitializeComponent();
         }
+
+        public Observation Observation { get; private set; }
 
         private void EditButton_Click(object sender, RoutedEventArgs e)
         {

@@ -153,7 +153,7 @@ namespace AnimalObservations
             {
                 //Trace.TraceInformation("Mouse up found observation");
 
-                var dlg = new SelectionDialog();
+                var dlg = new SelectionDialog(observation);
                 dlg.ShowDialog();
 
                 if (dlg.Action == SelectionAction.Delete)
