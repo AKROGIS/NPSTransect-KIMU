@@ -59,10 +59,15 @@
                     <Style TargetType="ScrollBar">
                         <Setter Property="Height" Value="18" />
                     </Style>
+                    <Style TargetType="{x:Type toolkit:DataGridCell}">
+                        <!--  This enables immediate editing, see code behind -->
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="DataGridCell_PreviewMouseLeftButtonDown" />
+                        <EventSetter Event="PreviewTextInput" Handler="DataGridCell_PreviewTextInput" />
+                    </Style>
                 </toolkit:DataGrid.Resources>
                 <toolkit:DataGrid.Columns>
-                    <toolkit:DataGridTextColumn Header="Group Size" Binding="{Binding GroupSize}" MinWidth="90" />
                     <toolkit:DataGridComboBoxColumn Header="Behavior" SelectedItemBinding="{Binding Behavior}" ItemsSource="{Binding Source={StaticResource GetEnumBehavior}}" MinWidth="70" />
+                    <toolkit:DataGridTextColumn Header="Group Size" Binding="{Binding GroupSize}" MinWidth="70" />
                     <toolkit:DataGridComboBoxColumn Header="Species" SelectedItemBinding="{Binding Species}" ItemsSource="{Binding Source={StaticResource GetEnumSpecies}}" MinWidth="70" />
                     <toolkit:DataGridTextColumn Header="Comment" Binding="{Binding Comment}" MinWidth="500" Width="*" />
                 </toolkit:DataGrid.Columns>
