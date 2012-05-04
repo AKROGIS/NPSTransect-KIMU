@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -21,9 +23,10 @@ namespace AnimalObservations
         
         public CollectTrackLogTask()
         {
+            //Note: The constructor is called on a background thread before the UI maybe ready,
+            //so we can't set UI elements like the ImageSource (task icon) property.  Use GetImageSource() override
             Name = "Collect Observations";  
             Description = "Begin data logging along a transect";
-            //Can't set the ImageSource (task icon) property because of threading issues.  Use GetImageSource() override
 
             NearbyTransects = new ObservableCollection<Transect>();
 
@@ -49,6 +52,13 @@ namespace AnimalObservations
 
         protected override void OnOwnerInitialized()
         {
+            //Note: This is called on a background non-STA thread,
+            //Which causes some problems, so we divert it onto the main thread.
+            if (!MobileApplication.Current.Dispatcher.CheckAccess())
+            {
+                MobileApplication.Current.Dispatcher.Invoke(new Action(OnOwnerInitialized));
+                return;
+            }
             ValidateDatabaseSchema();
             if (DatabaseSchemaIsInvalid)
                 return;
@@ -261,7 +271,7 @@ namespace AnimalObservations
         #region Manage GPS connection and events
 
         //ALL GPS EVENTS HAPPEN ON A BACKGROUND THREAD
-        //in lieu of locking I am rout8ing them onto the UI thread.  This is safe but inefficient.
+        //in lieu of locking I am routing them onto the UI thread.  This is safe but inefficient.
 
         /// <summary>
         /// This is updated only when we are recording.  These objects are saved to disk
@@ -278,8 +288,6 @@ namespace AnimalObservations
         private void InitializeGpsConnection()
         {
             HookupGpsEvents();
-            //Open the GPS connection.  Remove if we want to rely on application settings/user control
-            //GpsMgr.OpenAsync();
         }
 
         private void CloseGpsConnection()
@@ -333,8 +341,10 @@ namespace AnimalObservations
             if (!MobileApplication.Current.Dispatcher.CheckAccess())
             {
                 MobileApplication.Current.Dispatcher.Invoke(
-                    (System.Threading.ThreadStart) (() => ProcessGpsErrorEventFromConnection(sender, e)));
+                    (Action) (() => ProcessGpsErrorEventFromConnection(sender, e)));
+                return;
             }
+
             ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
                 "An error (" + e.Exception.Message + ") was encountered processing the GPS data. " +
                 "Data has been saved and the GPS has been closed.",
@@ -346,68 +356,67 @@ namespace AnimalObservations
         //The closed event is generated if the connection is lost: i.e. no power, cable unplugged, etc.
         void ProcessGpsClosedEventFromConnection(object sender, EventArgs e)
         {
-            if (MobileApplication.Current.Dispatcher.CheckAccess())
+            if (!MobileApplication.Current.Dispatcher.CheckAccess())
             {
-                UnhookGpsEvents();
-                _gpsConnection.GpsOpened += ProcessGpsOpenedEventFromConnection;
-                if (IsRecording)
-                {
-                    StopRecording();
-                }
-                MobileApplication.Current.Transition(MobileApplication.Current.Project.HomePage);
+                MobileApplication.Current.Dispatcher.Invoke(
+                    (Action)(() => ProcessGpsClosedEventFromConnection(sender, e)));
+                return;
             }
-            else
+
+            UnhookGpsEvents();
+            _gpsConnection.GpsOpened += ProcessGpsOpenedEventFromConnection;
+            if (IsRecording)
             {
-                MobileApplication.Current.Dispatcher.Invoke(new EventHandler(ProcessGpsClosedEventFromConnection),
-                    System.Windows.Threading.DispatcherPriority.Normal, sender, e);
+                StopRecording();
             }
+            MobileApplication.Current.Transition(MobileApplication.Current.Project.HomePage);
         }
 
         void ProcessGpsChangedEventFromConnection(object sender, EventArgs e)
         {
             if (!LocationChanged(_gpsConnection))
                 return;
-            if (MobileApplication.Current.Dispatcher.CheckAccess())
-            {
-                if (_gpsConnection.FixStatus == GpsFixStatus.Invalid)
-                {
-                    DrawBoat(MostRecentLocation, _gpsConnection.Course, true);
-                    return;
-                }
 
-                if (IsRecording)
-                {
-                    SaveGpsPoint();
-                }
-                else
-                {
-                    double latitude = _gpsConnection.Latitude;
-                    double longitude = _gpsConnection.Longitude;
-#if GPSINANCHORAGE
-                    //Offset Regan's office to end of Transect MainBay19
-                    //latitude -= (61.217311111 - 58.477595);
-                    //longitude += (149.885638889 - 136.000886);
-                    //latitude -= (61.21725 - 58.479367);
-                    //longitude += (149.88487 - 136.002424);
-                    //latitude -= (61.2174 - 58.479993);
-                    //longitude += (149.88493 - 136.002623);
-                    latitude -= (61.2174 - 58.480122);
-                    longitude += (149.88493 - 136.003435);
-#elif GPSINJUNEAU
-                    //Offset SEAN Juneau office to end of Transect MainBay19
-                    latitude -= (58.377663888 - 58.495580);
-                    longitude += (134.69872777 - 135.964885);
-#endif
-                    MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
-                }
-                if (OpenObservations.Count == 0)
-                    DrawBoat(MostRecentLocation, _gpsConnection.Course, false);
+            if (!MobileApplication.Current.Dispatcher.CheckAccess())
+            {
+                MobileApplication.Current.Dispatcher.Invoke(
+                    (Action) (() => ProcessGpsChangedEventFromConnection(sender, e)));
+                return;
+            }
+
+            if (_gpsConnection.FixStatus == GpsFixStatus.Invalid)
+            {
+                DrawBoat(MostRecentLocation, _gpsConnection.Course, true);
+                return;
+            }
+
+            if (IsRecording)
+            {
+                SaveGpsPoint();
             }
             else
             {
-                MobileApplication.Current.Dispatcher.Invoke(new EventHandler(ProcessGpsChangedEventFromConnection),
-                    System.Windows.Threading.DispatcherPriority.Normal, sender, e);
+                double latitude = _gpsConnection.Latitude;
+                double longitude = _gpsConnection.Longitude;
+#if GPSINANCHORAGE
+                //Offset Regan's office to end of Transect MainBay19
+                //latitude -= (61.217311111 - 58.477595);
+                //longitude += (149.885638889 - 136.000886);
+                //latitude -= (61.21725 - 58.479367);
+                //longitude += (149.88487 - 136.002424);
+                //latitude -= (61.2174 - 58.479993);
+                //longitude += (149.88493 - 136.002623);
+                latitude -= (61.2174 - 58.480122);
+                longitude += (149.88493 - 136.003435);
+#elif GPSINJUNEAU
+                //Offset SEAN Juneau office to end of Transect MainBay19
+                latitude -= (58.377663888 - 58.495580);
+                longitude += (134.69872777 - 135.964885);
+#endif
+                MostRecentLocation = MobileApplication.Current.Project.SpatialReference.FromGps(longitude, latitude);
             }
+            if (OpenObservations.Count == 0)
+                DrawBoat(MostRecentLocation, _gpsConnection.Course, false);
         }
 
         private void SaveGpsPoint()
@@ -434,15 +443,11 @@ namespace AnimalObservations
 
         private void SetupBoatLayer()
         {
-            if (!MobileApplication.Current.Dispatcher.CheckAccess())
-            {
-                MobileApplication.Current.Dispatcher.BeginInvoke((System.Threading.ThreadStart)SetupBoatLayer);
-                return;
-            }
-
             //Get Boat Icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/Boat-icon.png");
  
+            //Creating a new Image must be done on a STA thread.  The background thread that calls
+            //OnOwnerInitialized() is not STA
             _boat = new Image
                         {
                             Source = new BitmapImage(uri), 
@@ -466,12 +471,6 @@ namespace AnimalObservations
 
         private void DrawBoat(Coordinate location, double heading, bool error)
         {
-            //Only update the UI on the UI thread
-            if (!_boat.Dispatcher.CheckAccess())
-            {
-                _boat.Dispatcher.BeginInvoke((System.Threading.ThreadStart)(() => DrawBoat(location, heading, error)));
-                return;
-            }
 
             _boat.Opacity = error ? .45 : 1;
 
