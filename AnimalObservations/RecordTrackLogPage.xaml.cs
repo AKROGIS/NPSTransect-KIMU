@@ -240,6 +240,7 @@ namespace AnimalObservations
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
             Task.StartRecording();
+            Keyboard.Focus(this);
         }
 
         private void weatherComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -249,6 +250,7 @@ namespace AnimalObservations
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
             Task.StartRecording();
+            Keyboard.Focus(this);
         }
 
         private void visibilityComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -258,6 +260,7 @@ namespace AnimalObservations
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
             Task.StartRecording();
+            Keyboard.Focus(this);
         }
 
         private void onTransectCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -267,6 +270,7 @@ namespace AnimalObservations
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
             Task.StartRecording();
+            Keyboard.Focus(this);
         }
 
         #endregion
