@@ -66,6 +66,7 @@ namespace AnimalObservations
             //Must set up the boat layer before the GPS connection; gps events assume boat is ready to draw.
             SetupBoatLayer();
             InitializeGpsConnection();
+            AutoPan = true;
         }
 
         public override void Execute()
@@ -438,6 +439,8 @@ namespace AnimalObservations
 
         #region Draw the boat
 
+        public bool AutoPan { get; set; }
+
         private Image _boat;
         private GraphicLayer _overlay;
 
@@ -475,10 +478,13 @@ namespace AnimalObservations
             _boat.Opacity = error ? .45 : 1;
 
             //pan map to center boat location
-            Envelope env = MobileApplication.Current.Map.GetExtent();
-            env = env.Resize(0.7);
-            if (!env.Contains(location))
-                MobileApplication.Current.Map.CenterAt(location);
+            if (AutoPan)
+            {
+                Envelope env = MobileApplication.Current.Map.GetExtent();
+                env = env.Resize(0.7);
+                if (!env.Contains(location))
+                    MobileApplication.Current.Map.CenterAt(location);
+            }
 
             //heading = 0 is north (up); heading is in degrees clockwise
             //image without rotation is pointing E (270 degrees).

@@ -29,17 +29,20 @@ namespace AnimalObservations
 
 
             //We aren't using bindings because when a value changes we need to stop recording, change, start recording
-            //And the object being changed (tracklog) know s nothing about stoping and starting recording.
+            //And the object being changed (tracklog) know's nothing about stoping and starting recording.
             weatherComboBox.SelectedValue = Task.CurrentTrackLog.Weather;
             visibilityComboBox.SelectedValue = Task.CurrentTrackLog.Visibility;
             beaufortComboBox.SelectedValue = Task.CurrentTrackLog.Beaufort;
             onTransectCheckBox.IsChecked = Task.CurrentTrackLog.OnTransect;
-            // wire up the event handlers after initializing the values to revent the initialization from firing the events.
+            autoPanCheckBox.IsChecked = Task.AutoPan;
+            // wire up the event handlers after initializing the values to prevent the initialization from firing the events.
             weatherComboBox.SelectionChanged += weatherComboBox_SelectionChanged;
             visibilityComboBox.SelectionChanged += visibilityComboBox_SelectionChanged;
             beaufortComboBox.SelectionChanged += beaufortComboBox_SelectionChanged;
             onTransectCheckBox.Checked += onTransectCheckBox_Changed;
             onTransectCheckBox.Unchecked += onTransectCheckBox_Changed;
+            autoPanCheckBox.Checked += autoPanCheckBox_Changed;
+            autoPanCheckBox.Unchecked += autoPanCheckBox_Changed;
 
 
 
@@ -270,6 +273,13 @@ namespace AnimalObservations
             Task.StopRecording();
             Task.CurrentTrackLog = newTracklog;
             Task.StartRecording();
+            Keyboard.Focus(this);
+        }
+
+        private void autoPanCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            if (autoPanCheckBox.IsChecked.HasValue)
+                Task.AutoPan = autoPanCheckBox.IsChecked.Value;
             Keyboard.Focus(this);
         }
 

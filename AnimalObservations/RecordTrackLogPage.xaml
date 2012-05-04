@@ -30,6 +30,7 @@
                 <ComboBox Name="beaufortComboBox" ItemsSource="{Binding Source={x:Static local:TrackLog.BeaufortDomain}, Mode=OneTime}" DisplayMemberPath="Value" SelectedValuePath="Key" />
             </StackPanel>
             <CheckBox Name="onTransectCheckBox" VerticalAlignment="Center" >_On Transect</CheckBox>
+            <CheckBox Name="autoPanCheckBox" VerticalAlignment="Center" >_AutoPan</CheckBox>
         </WrapPanel>
         <MobileControl:MapControl Name="mapControl"/>
     </DockPanel>
