@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
@@ -104,8 +105,30 @@ namespace AnimalObservations
             if (extents == null)
                 throw new ArgumentNullException("extents");
 
-            return Observations.Values.FirstOrDefault(obs => obs.Feature.FeatureDataRow.Geometry.Within(extents)) ??
+            return Observations.Values.FirstOrDefault(obs => IsWithin(obs, extents)) ??
                    FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+            //return Observations.Values.FirstOrDefault(obs => obs.Feature.FeatureDataRow.Geometry.Within(extents)) ??
+            //       FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+        }
+
+        private static bool IsWithin(Observation obs, Envelope extents)
+        {
+            if (obs.Feature == null)
+            {
+                Trace.TraceError("Observation:{1} has no Feature", obs);
+                return false;
+            }
+            if (obs.Feature.FeatureDataRow == null)
+            {
+                Trace.TraceError("Observation:{1} has no FeatureDataRow", obs);
+                return false;
+            }
+            if (obs.Feature.FeatureDataRow.Geometry == null)
+            {
+                Trace.TraceError("Observation:{1} has no Geometry", obs);
+                return false;
+            }
+            return obs.Feature.FeatureDataRow.Geometry.Within(extents);
         }
 
         private static Observation FromFeature(Feature feature)
