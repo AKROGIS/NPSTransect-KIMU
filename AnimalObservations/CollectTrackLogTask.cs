@@ -160,6 +160,8 @@ namespace AnimalObservations
                 IsRecording = true;
                 //Collect our first point now, don't wait for an event. 
                 SaveGpsPoint();
+                CurrentTrackLog.PropertyChanged +=
+                    (sender, args) => { if (args.PropertyName == "TooBig") RestartTrackLog(); };
             }
 #endif
         }
@@ -221,6 +223,14 @@ namespace AnimalObservations
             }
         }
         private TrackLog _currentTrackLog;
+
+        private void RestartTrackLog()
+        {
+            var newTracklog = TrackLog.FromTrackLog(CurrentTrackLog);
+            StopRecording();
+            CurrentTrackLog = newTracklog;
+            StartRecording();
+        }
 
         #endregion
 

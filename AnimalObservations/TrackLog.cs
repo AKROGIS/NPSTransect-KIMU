@@ -176,7 +176,10 @@ namespace AnimalObservations
                 //Send this again, because it is occasionally missed when fired above.
                 OnPropertyChanged("CanSave");
             }
-
+            if (Feature.Geometry.CurrentPart.Count > 1000)
+            {
+                OnPropertyChanged("TooBig");
+            }
         }
 
         internal bool Save()
