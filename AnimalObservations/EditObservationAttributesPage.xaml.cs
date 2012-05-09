@@ -63,7 +63,11 @@ namespace AnimalObservations
             Task.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == "ActiveObservation" && Task.ActiveObservation != null)
+                {
                     Title = "Observation at " + Task.ActiveObservation.GpsPoint.LocalTime.ToLongTimeString();
+                    Task.ActiveObservation.BeginEdit();
+                }
+
             };
 
             angleTextBox.GotKeyboardFocus += (s, e) => angleTextBox.SelectAll();
@@ -74,6 +78,7 @@ namespace AnimalObservations
         private void InitializeData()
         {
             Task = MobileApplication.Current.FindTask(typeof(CollectTrackLogTask)) as CollectTrackLogTask;
+            Task.ActiveObservation.BeginEdit();
         }
 
         #endregion
@@ -88,6 +93,7 @@ namespace AnimalObservations
         protected override void OnCancelCommandExecute()
         {
             dataGrid.CancelEdit();
+            Task.ActiveObservation.CancelEdit();
             Task.RemoveObservation(Task.ActiveObservation);
             if (Task.ActiveObservation == null)
                 MobileApplication.Current.Transition(PreviousPage);
@@ -138,7 +144,7 @@ namespace AnimalObservations
         {
             CommitEdit(dataGrid);
             //If saving throws an exception, it is catastrophic, so let the app handle it
-            bool saved = Task.ActiveObservation.Save();
+            bool saved = Task.ActiveObservation.CommitEdit();
             if (saved)
             {
                 Task.RemoveObservation(Task.ActiveObservation);

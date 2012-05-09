@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
@@ -66,6 +67,7 @@ namespace AnimalObservations
         {
             //Create a default record to seed the datagrid, otherwise the datagrid shows no rows
             BirdGroups = new ObservableCollection<BirdGroup> { new BirdGroup() };
+            BirdGroups.CollectionChanged += BirdGroupsOnCollectionChanged;
         }
 
         //May return null if no feature is found with matching guid
@@ -219,6 +221,63 @@ namespace AnimalObservations
                 birdGroup.Delete();
         }
 
+
+        #endregion
+
+        #region Manage undo of changes made during a canceled edit session.
+
+        private bool _isEditing;
+        private BirdGroup[] _savedBirdGroups;
+        private int _savedAngle;
+        private int _savedDistance;
+        private readonly List<BirdGroup> _deletedBirdGroups = new List<BirdGroup>();
+
+        internal void BeginEdit()
+        {
+            if (_isEditing)
+                return;
+            _isEditing = true;
+            _savedBirdGroups = BirdGroups.Select(bg => bg.Copy()).ToArray();
+            _savedAngle = Angle;
+            _savedDistance = Distance;
+        }
+
+        internal void CancelEdit()
+        {
+            BirdGroups.Clear();
+            foreach (var savedBirdGroup in _savedBirdGroups)
+            {
+                BirdGroups.Add(savedBirdGroup);
+            }
+            // Ignore the default values from a 'blank' saved observation
+            if (_savedAngle != 0)
+                Angle = _savedAngle;
+            if (_savedDistance != 0)
+                Distance = _savedDistance;
+            _isEditing = false;
+        }
+
+        internal bool CommitEdit()
+        {
+            _isEditing = false;
+            foreach (var deletedBirdGroup in _deletedBirdGroups)
+                deletedBirdGroup.Delete();
+            _deletedBirdGroups.Clear();
+            return Save();
+        }
+
+        private void BirdGroupsOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+        {
+            //If we delete a bird group we need to make sure it is deleted from the database 
+            if (notifyCollectionChangedEventArgs.Action != NotifyCollectionChangedAction.Remove)
+                return;
+            foreach (var item in notifyCollectionChangedEventArgs.OldItems)
+            {
+                var birdGroup = item as BirdGroup;
+                if (birdGroup != null)
+                    _deletedBirdGroups.Add(birdGroup);
+            }
+        }
 
         #endregion
     }

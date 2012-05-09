@@ -144,5 +144,16 @@ namespace AnimalObservations
             return string.Format("{0} {1}({2})", GroupSize, Species, Behavior);
         }
 
+        internal BirdGroup Copy()
+        {
+            return new BirdGroup
+                       {
+                           GroupSize = this.GroupSize,
+                           Behavior = this.Behavior,
+                           Species = this.Species,
+                           Comment = this.Comment,
+                           BirdGroupFeature = this.BirdGroupFeature
+                       };
+        }
     }
 }
