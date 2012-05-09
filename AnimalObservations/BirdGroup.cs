@@ -3,6 +3,10 @@ using System.Text;
 
 //BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
 
+//BirdGroup is an item in bservableCollection<BirdGroup>, so that it can be bound to a row in the datagrid
+//rows in a datagrid should implement INotifyPropertyChanged, however I only set the properties in the
+//internal constructor, never when the items are in the datagrid, so it is not required.
+ 
 namespace AnimalObservations
 {
     public class BirdGroup : IDataErrorInfo
