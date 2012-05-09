@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Windows;
@@ -97,11 +98,17 @@ namespace AnimalObservations
         /// </summary>
         void NewObservationCommandExecute()
         {
-            dataGrid.CommitEdit();
+            CommitEdit(dataGrid);
 
             //FromGpsPoint() may throw exceptions, but that would be catastrophic, so let the app handle it.
             Task.AddObservationAsActive(Observation.FromGpsPoint(Task.CurrentGpsPoint));
             Keyboard.Focus(angleTextBox);
+        }
+
+        private void CommitEdit(DataGrid dataGrid)
+        {
+            dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+            dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
         }
 
         protected override bool CanExecuteOkCommand()
@@ -129,7 +136,7 @@ namespace AnimalObservations
         /// </summary>
         protected override void OnOkCommandExecute()
         {
-            dataGrid.CommitEdit();
+            CommitEdit(dataGrid);
             //If saving throws an exception, it is catastrophic, so let the app handle it
             bool saved = Task.ActiveObservation.Save();
             if (saved)
@@ -203,7 +210,7 @@ namespace AnimalObservations
 
         private void observationListView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            dataGrid.CommitEdit();
+            CommitEdit(dataGrid);
         }
 
         #endregion
@@ -226,6 +233,7 @@ namespace AnimalObservations
             DataGridCell cell = sender as DataGridCell;
             GridColumnFastEdit(cell, e);
         }
+
 
         private static void GridColumnFastEdit(DataGridCell cell, RoutedEventArgs e)
         {
