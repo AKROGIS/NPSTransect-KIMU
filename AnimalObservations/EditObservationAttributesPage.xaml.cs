@@ -192,6 +192,10 @@ namespace AnimalObservations
                  (e.Key == Key.N && e.KeyboardDevice.Modifiers == ModifierKeys.Control))
             {
                 e.Handled = true;
+                CommitEdit(dataGrid);
+                Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
+                //Note if the edited value in the control is not valid, i.e. angle < 0, then the edits are discarded,
+                //and the control reverts to the previous value.
                 NewObservationCommandExecute();
                 return;
             }
