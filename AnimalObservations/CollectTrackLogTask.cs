@@ -375,6 +375,9 @@ namespace AnimalObservations
 
         void ProcessGpsChangedEventFromConnection(object sender, EventArgs e)
         {
+            if (_gpsConnection == null)
+                //This only happens in odd cases where we are starting up/shutting down and the threads are get out of sync.
+                return;
             if (!LocationChanged(_gpsConnection))
                 return;
 
