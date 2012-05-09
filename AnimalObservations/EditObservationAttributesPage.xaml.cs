@@ -105,6 +105,7 @@ namespace AnimalObservations
         void NewObservationCommandExecute()
         {
             CommitEdit(dataGrid);
+            Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit changes.
 
             //FromGpsPoint() may throw exceptions, but that would be catastrophic, so let the app handle it.
             Task.AddObservationAsActive(Observation.FromGpsPoint(Task.CurrentGpsPoint));
@@ -143,6 +144,8 @@ namespace AnimalObservations
         protected override void OnOkCommandExecute()
         {
             CommitEdit(dataGrid);
+            Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
+
             //If saving throws an exception, it is catastrophic, so let the app handle it
             bool saved = Task.ActiveObservation.CommitEdit();
             if (saved)
