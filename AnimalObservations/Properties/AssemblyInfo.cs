@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Animal Observations")]
-[assembly: AssemblyDescription("Record observations of animals")]
+[assembly: AssemblyTitle("NPTransect-KIMU")]
+[assembly: AssemblyDescription("Record observations of Murrelets")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("National Park Service, Alaska Region")]
 [assembly: AssemblyProduct("ArcGIS Mobile Extension")]
-[assembly: AssemblyCopyright("Copyright © 2011 National Park Service")]
+[assembly: AssemblyCopyright("Copyright © 2012 National Park Service")]
 [assembly: AssemblyTrademark("Public Domain")]
 [assembly: AssemblyCulture("")]
 
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.65")]
-[assembly: AssemblyFileVersion("1.0.0.65")]
+[assembly: AssemblyVersion("1.1.0.1")]
+[assembly: AssemblyFileVersion("1.1.0.1")]

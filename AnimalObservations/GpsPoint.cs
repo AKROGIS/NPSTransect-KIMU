@@ -154,20 +154,14 @@ namespace AnimalObservations
             Location = new Coordinate(443759, 6484291);  //East end of MainBay19
             Bearing = 0;
 #elif GPSINANCHORAGE
-            //Offset Regan's office to end of Transect MainBay19
-            //Latitude -= (61.217311111 - 58.477595);
-            //Longitude += (149.885638889 - 136.000886);
-            //Latitude -= (61.21725 - 58.479367);
-            //Longitude += (149.88487 - 136.002424);
-            //Latitude -= (61.21740 - 58.479993);
-            //Longitude += (149.88493 - 136.002623);
-            Latitude -= (61.2174 - 58.480122);
-            Longitude += (149.88493 - 136.003435);
+            //Offset Regan's office to end of Transect 001
+            Latitude -= (61.2174 - 58.5260);
+            Longitude += (149.88493 - 135.9615);
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 #elif GPSINJUNEAU
-            //Offset SEAN Juneau office to end of Transect MainBay19
-            Latitude -= (58.377663888 - 58.495580);
-            Longitude += (134.69872777 - 135.964885);
+            //Offset SEAN Juneau office to end of Transect 001
+            Latitude -= (58.377663888 - 58.5260);
+            Longitude += (134.69872777 - 135.9615);
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
 #else
             Location = MobileApplication.Current.Project.SpatialReference.FromGps(Longitude, Latitude);
