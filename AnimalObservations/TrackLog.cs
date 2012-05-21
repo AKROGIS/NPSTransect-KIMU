@@ -197,6 +197,12 @@ namespace AnimalObservations
 
         private void SyncPropertiesToFeature()
         {
+            if (Vessel != null) Vessel = Vessel.ToUpper();
+            if (DataRecorder != null) DataRecorder = DataRecorder.ToUpper();
+            if (Observer1 != null) Observer1 = Observer1.ToUpper();
+            if (Observer2 != null) Observer2 = Observer2.ToUpper();
+            if (ProtocolId != null) ProtocolId = ProtocolId.ToUpper();
+
             Feature.FeatureDataRow["TrackID"] = Guid;
             Feature.FeatureDataRow["TransectID"] = Transect.Name;
             Feature.FeatureDataRow["Vessel"] = Vessel ?? (object)DBNull.Value;
