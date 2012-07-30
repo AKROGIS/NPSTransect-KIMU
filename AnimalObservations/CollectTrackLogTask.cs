@@ -431,8 +431,8 @@ namespace AnimalObservations
         {
             //CreateWith() and Save() may throw exceptions, but that would be catastrophic, so let the app handle it.
             CurrentGpsPoint = GpsPoint.FromGpsConnection(CurrentTrackLog, _gpsConnection);
-            CurrentGpsPoint.Save();
-            CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
+            if (CurrentGpsPoint.Save())
+                CurrentTrackLog.AddPoint(CurrentGpsPoint.Location);
             MostRecentLocation = CurrentGpsPoint.Location;
         }
 

@@ -173,7 +173,7 @@ namespace AnimalObservations
 
         #region Save/Delete
 
-        internal void Save()
+        internal bool Save()
         {
             Feature.Geometry = new Point(Location);
             Feature.FeatureDataRow["GpsPointID"] = Guid;
@@ -187,7 +187,7 @@ namespace AnimalObservations
             Feature.FeatureDataRow["GPS_Fix_Status"] = (int)SatelliteFixStatus;
             Feature.FeatureDataRow["Speed"] = Speed;
             Feature.FeatureDataRow["Bearing"] = Bearing;
-            Feature.SaveEdits();
+            return Feature.SaveEdits();
         }
 
         internal void Delete()
