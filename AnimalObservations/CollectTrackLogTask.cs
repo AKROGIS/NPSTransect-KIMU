@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -75,7 +73,7 @@ namespace AnimalObservations
             if (DatabaseSchemaIsInvalid)
                 return;
 
-            var mapExtents = MobileApplication.Current.Map.GetExtent();
+            var mapExtents = MobileApplication.Current.Map.Extent;
             if (mapExtents == null)
             {
                 ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
@@ -120,7 +118,7 @@ namespace AnimalObservations
 
         internal void RefreshNearbyTransects()
         {
-            Envelope mapExtents = MobileApplication.Current.Map.GetExtent();
+            Envelope mapExtents = MobileApplication.Current.Map.Extent;
             bool transectsAreNearby = (Transect.GetWithin(mapExtents).FirstOrDefault() != null);
             //Leave the list unchanged if there are no nearby transects.
             //We don't want the pick list to go blank if we are changing tracklog properties in the
@@ -487,7 +485,7 @@ namespace AnimalObservations
             //pan map to center boat location
             if (AutoPan)
             {
-                Envelope env = MobileApplication.Current.Map.GetExtent();
+                Envelope env = MobileApplication.Current.Map.Extent;
                 env = env.Resize(0.7);
                 if (!env.Contains(location))
                     MobileApplication.Current.Map.CenterAt(location);
@@ -516,7 +514,6 @@ namespace AnimalObservations
         private void ValidateDatabaseSchema()
         {
             _validDb = !TestDatabaseSchema();
-            return;
         }
 
         private bool DatabaseSchemaIsInvalid

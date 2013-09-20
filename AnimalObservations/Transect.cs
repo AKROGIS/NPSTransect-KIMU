@@ -2,15 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using ESRI.ArcGIS.Mobile;
 using ESRI.ArcGIS.Mobile.Geometries;
-using ESRI.ArcGIS.Mobile.MobileServices;
+using ESRI.ArcGIS.Mobile.FeatureCaching;
 
 namespace AnimalObservations
 {
     public class Transect
     {
-        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Transects");
+        private static readonly FeatureSource FeatureSource = MobileUtilities.GetFeatureSource("Transects");
         private static readonly Dictionary<string, Transect> Transects = new Dictionary<string, Transect>();
 
         public Geometry Shape { get; private set; }
@@ -25,7 +24,7 @@ namespace AnimalObservations
 
         private static void LoadAllTransectsFromDataSource()
         {
-            using (FeatureDataReader data = FeatureLayer.GetDataReader(new QueryFilter(), EditState.Original))
+            using (FeatureDataReader data = FeatureSource.GetDataReader(new QueryFilter(), EditState.Original))
             {
                 while (data.Read())
                 {
@@ -54,7 +53,7 @@ namespace AnimalObservations
             Shape = data.GetGeometry();
             const string idColumnName = "TransectID";
             if (data.GetOrdinal(idColumnName) < 0)
-                throw new ArgumentException(string.Format("Column '{0}' does not belong to table {1}",idColumnName, FeatureLayer.Name));
+                throw new ArgumentException(string.Format("Column '{0}' does not belong to table {1}",idColumnName, FeatureSource.Name));
             Name = data[idColumnName] as string;
         }
 

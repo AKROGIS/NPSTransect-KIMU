@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
-using ESRI.ArcGIS.Mobile.MobileServices;
+using ESRI.ArcGIS.Mobile.FeatureCaching;
 
 //BirdGroup is bound to the XAML interface, BirdGroupFeature is bound to the GIS database 
 
@@ -21,7 +21,7 @@ namespace AnimalObservations
 {
     public class BirdGroupFeature
     {
-        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("BirdGroups");
+        private static readonly FeatureSource FeatureSource = MobileUtilities.GetFeatureSource("BirdGroups");
         private static readonly Dictionary<Guid, BirdGroupFeature> BirdGroups = new Dictionary<Guid, BirdGroupFeature>();
 
         private Feature Feature { get; set; }
@@ -49,11 +49,11 @@ namespace AnimalObservations
 
             //Next search the database for matching birdgroups, but only load/add them if they are not already loaded.
 #if BROKEN_WHERE_GUID
-            int columnIndex = FeatureLayer.Columns.IndexOf("ObservationID");
-            var rows = MobileUtilities.GetFeatureRows(FeatureLayer, observation.Guid, columnIndex);
+            int columnIndex = FeatureSource.Columns.IndexOf("ObservationID");
+            var rows = MobileUtilities.GetFeatureRows(FeatureSource, observation.Guid, columnIndex);
 #else
             string whereClause = string.Format("ObservationID = '{{{0}}}'", observation.Guid);
-            var rows = MobileUtilities.GetFeatureRows(FeatureLayer, whereClause)
+            var rows = MobileUtilities.GetFeatureRows(FeatureSource, whereClause)
 #endif
             results.AddRange(from birdFeature in rows
                              where !BirdGroups.ContainsKey(new Guid(birdFeature.GlobalId.ToByteArray()))
@@ -71,7 +71,7 @@ namespace AnimalObservations
         {
             //Check to see if it is in our cache, if not, then load from database
             return BirdGroups.Values.FirstOrDefault(birds => birds.Feature.FeatureDataRow.Geometry.Within(extents)) ??
-                   FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+                   FromFeature(MobileUtilities.GetFeature(FeatureSource, extents));
         }
 
         internal static BirdGroupFeature FromObservation(Observation observation)
@@ -79,7 +79,7 @@ namespace AnimalObservations
             if (observation == null)
                 throw new ArgumentNullException("observation");
 
-            var birdGroup = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var birdGroup = FromFeature(MobileUtilities.CreateNewFeature(FeatureSource));
             if (birdGroup == null)
                 throw new ApplicationException("Database returned null when asked to create a new feature");
             birdGroup.Observation = observation;
