@@ -138,7 +138,6 @@ namespace AnimalObservations
                 FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
             if (Feature.FeatureDataRow["OnTransect"] is string)
                 OnTransect = ((string)Feature.FeatureDataRow["OnTransect"]) == "True";
-
         }
 
         private void LoadAttributes(TrackLog templateTrackLog)

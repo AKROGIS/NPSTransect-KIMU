@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
+using Point = System.Windows.Point;
 
 //TODO drag image while panning
 
@@ -15,15 +18,12 @@ namespace AnimalObservations
         //One-Time, One-Way bindings:
         public CollectTrackLogTask Task { get; private set; }
 
-        //private readonly CollectTrackLogTask Task;
-        private readonly TrackLog _trackLog;
-
         #region Constructor
 
         public RecordTrackLogPage()
         {
             Task = (CollectTrackLogTask)MobileApplication.Current.FindTask(typeof(CollectTrackLogTask));
-            _trackLog = Task.CurrentTrackLog;
+            TrackLog trackLog = Task.CurrentTrackLog;
 
             InitializeComponent();
 
@@ -47,12 +47,12 @@ namespace AnimalObservations
 
 
             //Page Captions
-            Title = "Transect " + _trackLog.Transect.Name;
+            Title = "Transect " + trackLog.Transect.Name;
             Note = "Capturing GPS points in track log";
 
             // page icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
-            ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
+            ImageSource = new BitmapImage(uri);
 
             // back button
             CancelCommand.Text = "Stop Recording";
@@ -119,7 +119,7 @@ namespace AnimalObservations
             base.OnMouseDown(e);
             //MouseUp += new MouseButtonEventHandler(RecordTrackLogPage_MouseUp);
         }
-        private System.Windows.Point _mouseDownPoint;
+        private Point _mouseDownPoint;
         private bool _myMouseDown;
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
@@ -134,7 +134,7 @@ namespace AnimalObservations
             }
             _myMouseDown = false;
 
-            System.Windows.Point mouseUpPoint = e.GetPosition(this);
+            Point mouseUpPoint = e.GetPosition(this);
 
             //Check to see if the mouseup location is substantially different than the mouse down location, if so then pan and be done
             int dx = Convert.ToInt32(mouseUpPoint.X - _mouseDownPoint.X);
@@ -236,7 +236,7 @@ namespace AnimalObservations
 
         #region UI Events
 
-        private void beaufortComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void beaufortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.Beaufort = (int)beaufortComboBox.SelectedValue;
@@ -246,7 +246,7 @@ namespace AnimalObservations
             Keyboard.Focus(this);
         }
 
-        private void weatherComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void weatherComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.Weather = (int)weatherComboBox.SelectedValue;
@@ -256,7 +256,7 @@ namespace AnimalObservations
             Keyboard.Focus(this);
         }
 
-        private void visibilityComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void visibilityComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var newTracklog = TrackLog.FromTrackLog(Task.CurrentTrackLog);
             newTracklog.Visibility = (int)visibilityComboBox.SelectedValue;

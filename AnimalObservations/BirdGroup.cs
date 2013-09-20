@@ -148,11 +148,11 @@ namespace AnimalObservations
         {
             return new BirdGroup
                        {
-                           GroupSize = this.GroupSize,
-                           Behavior = this.Behavior,
-                           Species = this.Species,
-                           Comment = this.Comment,
-                           BirdGroupFeature = this.BirdGroupFeature
+                           GroupSize = GroupSize,
+                           Behavior = Behavior,
+                           Species = Species,
+                           Comment = Comment,
+                           BirdGroupFeature = BirdGroupFeature
                        };
         }
     }

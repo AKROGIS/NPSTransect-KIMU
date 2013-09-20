@@ -48,7 +48,7 @@ namespace AnimalObservations
             }
         }
 
-        private void LoadAttributes(FeatureDataReader data)
+        private void LoadAttributes(IFeatureDataRecord data)
         {
             Shape = data.GetGeometry();
             const string idColumnName = "TransectID";

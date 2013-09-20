@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
@@ -145,8 +146,8 @@ namespace AnimalObservations
             //Feature.Geometry = GetLocation(BirdGroupLocationRelativeTo.TransectHeading);
             Feature.FeatureDataRow["ObservationID"] = Observation.Guid;
             Feature.FeatureDataRow["GroupSize"] = Size;
-            Feature.FeatureDataRow["Behavior"] = Behavior.ToString();
-            Feature.FeatureDataRow["Species"] = Species.ToString();
+            Feature.FeatureDataRow["Behavior"] = Behavior.ToString(CultureInfo.InvariantCulture);
+            Feature.FeatureDataRow["Species"] = Species.ToString(CultureInfo.InvariantCulture);
             Feature.FeatureDataRow["Comments"] = Comments ?? (object)DBNull.Value;
             if (!Feature.SaveEdits())
             {

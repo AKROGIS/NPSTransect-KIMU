@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace AnimalObservations
@@ -13,7 +14,7 @@ namespace AnimalObservations
             CultureInfo culture)
         {
             var count  = (int)value;
-            return count > 1 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            return count > 1 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public object ConvertBack(

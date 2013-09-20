@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using ESRI.ArcGIS;
 using ESRI.ArcGIS.ADF;  //for ComReleaser, requires ESRI.ArcGIS.ADF.Connection.Local.dll
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;  // For Shape coordiantes
@@ -205,7 +206,7 @@ namespace CSV_Export
         private static void GetArcGisLicense()
         {
             //requires ArcGIS 10+ and reference to ESRI.ArcGIS.Version.dll
-            ESRI.ArcGIS.RuntimeManager.BindLicense(ESRI.ArcGIS.ProductCode.EngineOrDesktop);
+            RuntimeManager.BindLicense(ProductCode.EngineOrDesktop);
         }
 
         private static Dictionary<object,List<Observation>> GetObservations(ITable table)

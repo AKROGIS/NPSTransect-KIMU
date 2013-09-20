@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using ESRI.ArcGIS.Mobile.Client;
 
 namespace AnimalObservations
@@ -24,7 +26,7 @@ namespace AnimalObservations
 
             // page icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
-            ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
+            ImageSource = new BitmapImage(uri);
 
             // back button
             BackCommands.Add(BackCommand);
@@ -50,7 +52,7 @@ namespace AnimalObservations
 
         #region Page update (called from Loaded event)
 
-        private void SetTrackLogAndRefreshNearbyTransects(object sender, System.Windows.RoutedEventArgs e)
+        private void SetTrackLogAndRefreshNearbyTransects(object sender, RoutedEventArgs e)
         {
             //Update transect combobox (XAML bindings reads Task.NearbyTransects)
             Task.RefreshNearbyTransects();
