@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ESRI_ItemInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <guid>e6afd140-3782-42cc-9d54-083f627e3590</guid>
+  <title>KIMU Survey Tool</title>
+  <type>Windows Mobile Package</type>
+  <typekeywords>
+    <typekeyword>ArcGIS Windows Mobile Package</typekeyword>
+    <typekeyword>ArcGIS Windows Mobile Map</typekeyword>
+    <typekeyword>ArcGIS Windows Mobile</typekeyword>
+    <typekeyword>wmpk</typekeyword>
+  </typekeywords>
+  <thumbnail>thumbnail/thumbnail.jpg</thumbnail>
+  <description>A mobile tool for surveying the murrelet population in Glacier Bay National Park</description>
+  <datalastmodifiedtime>2011-06-29T12:41:21.6104959-08:00</datalastmodifiedtime>
+  <spatialreference>PROJCS["NAD_1983_UTM_Zone_8N",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["False_Easting",500000.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",-135.0],PARAMETER["Scale_Factor",0.9996],PARAMETER["Latitude_Of_Origin",0.0],UNIT["Meter",1.0]]</spatialreference>
+  <tags>
+    <tag>GLBA</tag>
+    <tag>SEAN</tag>
+    <tag>murrelet</tag>
+    <tag>kitlitz</tag>
+    <tag>marbled</tag>
+    <tag>Glacier</tag>
+    <tag>Bay</tag>
+    <tag>National</tag>
+    <tag>Park</tag>
+    <tag>inventory</tag>
+    <tag>monitoring</tag>
+    <tag>Southeast</tag>
+    <tag>Alaska</tag>
+  </tags>
+</ESRI_ItemInformation>
