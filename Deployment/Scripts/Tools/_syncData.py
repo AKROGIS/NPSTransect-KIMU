@@ -14,16 +14,14 @@ import arcinfo
 # Import arcpy module
 import arcpy
 
-import sys
-userLocalAppDir = sys.argv[1]
-
 # Local variables:
-Murrelets__sync__mxd = "C:\\KIMU\\Murrelets (sync).mxd"
-MobileCache = userLocalAppDir + "\\ESRI\\ArcGIS Mobile\\P_murrelet\\MobileCache"
+Murrelets__sync__mxd = r"C:\KIMU\Murrelets (sync).mxd"
+MobileCache = r"C:\KIMU\MobileProject\Murrelets (sync)"
 
 print "# Master Map:",Murrelets__sync__mxd
 print "# Mobile Cache:",MobileCache
 
 # Process: Synchronize Mobile Cache
-arcpy.SynchronizeMobileCache_mobile(Murrelets__sync__mxd, MobileCache, "true", "true", "370000 6460000 460000 6560000", "'Bird Groups';'GPS Points';Observations;Tracks;Transects", "")
+arcpy.SynchronizeMobileCache_mobile(Murrelets__sync__mxd, MobileCache)
 
+print "# Data Synced!"

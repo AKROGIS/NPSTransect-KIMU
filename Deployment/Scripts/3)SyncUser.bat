@@ -1,3 +1,3 @@
 @echo off
-C:\Python26\ArcGIS10.0\python.exe C:\KIMU\Scripts\Tools\_syncData.py %LOCALAPPDATA%
+C:\Python27\ArcGIS10.2\python.exe C:\KIMU\Scripts\Tools\_syncData.py
 pause

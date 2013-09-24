@@ -11,21 +11,17 @@ print "# Syncing mobile map schema"
 #import arceditor
 import arcinfo
 
-
 # Import arcpy module
 import arcpy
 
-import sys
-userLocalAppDir = sys.argv[1]
-
 # Local variables:
-Murrelets__sync__mxd = "C:\\KIMU\\Murrelets (sync).mxd"
-P_murrelet = userLocalAppDir + "\\ESRI\\ArcGIS Mobile\\P_murrelet"
+Murrelets__sync__mxd = r"C:\KIMU\Murrelets (sync).mxd"
+P_murrelet = r"C:\KIMU\MobileProject"
 
 print "# Reading:",Murrelets__sync__mxd
 print "# Writing:",P_murrelet
 
 # Process: Create Mobile Map
-arcpy.CreateMobileMap_mobile(Murrelets__sync__mxd, P_murrelet, "true", "370000 6460000 460000 6560000", "", "")
-#arcpy.CreateMobileMap_mobile(Murrelets__sync__mxd, P_murrelet, "", "378599.338576235 6469838.71346358 450607.899120381 6550804.43641687", "'Bird Groups';'GPS Points';Observations;Tracks;Transects", "")
+arcpy.CreateMobileCache_mobile(Murrelets__sync__mxd, P_murrelet)
 
+print "# Created Mobile Schema!"
