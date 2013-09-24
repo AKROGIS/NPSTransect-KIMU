@@ -134,8 +134,8 @@ namespace AnimalObservations
                 Beaufort = (int)Feature.FeatureDataRow["Beaufort"];
             if (Feature.FeatureDataRow["Start"] is DateTime)
                 StartingTime = (DateTime)Feature.FeatureDataRow["Start"];
-            if (Feature.FeatureDataRow["End"] is DateTime)
-                FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
+            if (Feature.FeatureDataRow["End_"] is DateTime)
+                FinishingTime = (DateTime)Feature.FeatureDataRow["End_"];
             if (Feature.FeatureDataRow["OnTransect"] is string)
                 OnTransect = ((string)Feature.FeatureDataRow["OnTransect"]) == "True";
         }
