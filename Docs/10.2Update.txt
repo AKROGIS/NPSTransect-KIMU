@@ -11,5 +11,8 @@ Murrelet.gdb is a copy of empty database from SEAN on 2013-07-21
 Edited definition query in Murrelets (sync).mxd to display Transects for 2014
 
 To do:
-edit help to specify Projects to open from C:\KIMU
+edit help to document how to set ArcGIS Mobile to open projects C:\KIMU
+edit help to document double clicking C:\KIMU\MobileProject\murrelet.amp
 resolve create/sync schema bug
+Update dll versions numbers
+Create Test dll and test
