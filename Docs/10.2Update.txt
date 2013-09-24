@@ -1,0 +1,15 @@
+ArcMobileDVD directory renamed ArcGIS_Windows_Mobile_1011_133385 (version may change) 
+MachineData\AnimalObservations.dll is updated
+Delete UserData
+Create MobileProject directory
+ (This is now the master copy of the mobile project)
+ the GLBA_Cache folder (.99GB) should be located in this folder)
+ all the other files are new (some are copies of files from old UserData folder)
+Script folder is updated with new versions for 10.2 
+Source Code in Docs directory has been updated
+Murrelet.gdb is a copy of empty database from SEAN on 2013-07-21
+Edited definition query in Murrelets (sync).mxd to display Transects for 2014
+
+To do:
+edit help to specify Projects to open from C:\KIMU
+resolve create/sync schema bug
