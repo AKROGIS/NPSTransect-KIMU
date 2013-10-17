@@ -190,7 +190,7 @@ namespace AnimalObservations
         private bool QuickSave()
         {
             FinishingTime = DateTime.Now;
-            Feature.FeatureDataRow["End"] = FinishingTime;     
+            Feature.FeatureDataRow["End_"] = FinishingTime;     
             return Feature.SaveEdits();
         }
 
