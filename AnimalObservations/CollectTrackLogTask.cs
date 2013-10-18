@@ -159,8 +159,11 @@ namespace AnimalObservations
             else
             {
                 IsRecording = true;
+                CurrentTrackLog.StartingTime = DateTime.Now;
                 //Collect our first point now, don't wait for an event. 
                 SaveGpsPoint();
+                //At this time the tracklog geometry is invalid, so we don't bother saving it.
+                //The tracklog will save itself as soon as it has two points. 
                 CurrentTrackLog.PropertyChanged +=
                     (sender, args) => { if (args.PropertyName == "TooBig") RestartTrackLog(); };
             }

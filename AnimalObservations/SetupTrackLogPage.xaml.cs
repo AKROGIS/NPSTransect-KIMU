@@ -105,9 +105,6 @@ namespace AnimalObservations
         protected override void OnOkCommandExecute()
         {
             Task.StartRecording();
-            Task.CurrentTrackLog.StartingTime = DateTime.Now;
-            //At this time the tracklog geometry is invalid, so we don't bother saving it.
-            //The tracklog will save itself as soon as it has two points. 
             MobileApplication.Current.Transition(new RecordTrackLogPage());
         }
         
