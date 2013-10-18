@@ -1,6 +1,6 @@
 ﻿
 Production Compilation Symbols:
-BROKEN_WHERE_GUID - Provides a work around for an ESRI bug.  Bug does not return results for queries based on 'WHERE GUID = {...}'
+BROKEN_WHERE_GUID - Provides a work around for an ESRI bug.  Bug does not return results for queries based on 'WHERE GUID = {...}' - The bug appears fixed in 10.2
 
 Debug Compilation Symbols:
 TESTINGWITHOUTGPS - define this symbol when testing without a GPS signal
