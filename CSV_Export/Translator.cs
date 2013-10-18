@@ -45,7 +45,8 @@ namespace CSV_Export
             var endDate = new DateTime(Year + 1, 1, 1);
             string dateWhereClause = string.Format(
                 "\"{0}\" >= date '{1}' AND \"{0}\" < date '{2}'",
-                "GpsPoints.Time_local",
+                //"GpsPoints.Time_local", //Bizzare, with 10.2, the table prefix for a field in a join is not required.
+                "Time_local",
                 startDate.ToString("yyyy-MM-dd HH:mm:ss"),
                 endDate.ToString("yyyy-MM-dd HH:mm:ss")
                 );
