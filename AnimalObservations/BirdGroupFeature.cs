@@ -54,7 +54,7 @@ namespace AnimalObservations
             var rows = MobileUtilities.GetFeatureRows(FeatureSource, observation.Guid, columnIndex);
 #else
             string whereClause = string.Format("ObservationID = '{{{0}}}'", observation.Guid);
-            var rows = MobileUtilities.GetFeatureRows(FeatureSource, whereClause)
+            var rows = MobileUtilities.GetFeatureRows(FeatureSource, whereClause);
 #endif
             results.AddRange(from birdFeature in rows
                              where !BirdGroups.ContainsKey(new Guid(birdFeature.GlobalId.ToByteArray()))

@@ -70,6 +70,13 @@ namespace AnimalObservations
         {
             return GetFeatures(featureSource, whereClause).FirstOrDefault();
         }
+
+        internal static IEnumerable<FeatureDataRow> GetFeatureRows(FeatureSource featureSource, string whereClause)
+        {
+            var query = new QueryFilter(whereClause);
+            FeatureDataTable table = featureSource.GetDataTable(query);
+            return (table == null) ? null : table.Rows.Cast<FeatureDataRow>();
+        }
 #endif
         internal static Feature GetFeature(FeatureSource featureSource, Envelope extents)
         {
