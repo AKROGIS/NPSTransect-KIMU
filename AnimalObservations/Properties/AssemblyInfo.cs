@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NPTransect-KIMU")]
+[assembly: AssemblyTitle("NPTransect-KIMU-JuneauTesting")]
 [assembly: AssemblyDescription("Record observations of Murrelets")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("National Park Service, Alaska Region")]
 [assembly: AssemblyProduct("ArcGIS Mobile Extension")]
-[assembly: AssemblyCopyright("Copyright © 2012 National Park Service")]
+[assembly: AssemblyCopyright("Copyright © 2012-13 National Park Service")]
 [assembly: AssemblyTrademark("Public Domain")]
 [assembly: AssemblyCulture("")]
 
