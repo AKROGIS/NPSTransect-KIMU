@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("National Park Service, Alaska Region")]
 [assembly: AssemblyProduct("ArcGIS Mobile Extension")]
-[assembly: AssemblyCopyright("Copyright © 2012-13 National Park Service")]
+[assembly: AssemblyCopyright("Copyright © 2011-13 National Park Service")]
 [assembly: AssemblyTrademark("Public Domain")]
 [assembly: AssemblyCulture("")]
 
