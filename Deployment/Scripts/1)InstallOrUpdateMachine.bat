@@ -10,7 +10,9 @@ if not exist %destDir% mkdir %destDir%
 
 IF NOT EXIST %destDir% goto error2
 
-Copy /Y /B C:\KIMU\MachineData\*.dll %destDir%
+Copy /Y /B C:\KIMU\MachineData\AnimalObservations.dll %destDir%
+IF %ERRORLEVEL% NEQ 0 goto error3
+Copy /Y /B C:\KIMU\MachineData\WPFToolkit.dll %destDir%
 IF %ERRORLEVEL% NEQ 0 goto error3
 
 	echo.
