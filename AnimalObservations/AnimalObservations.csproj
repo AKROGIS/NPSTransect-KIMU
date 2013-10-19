@@ -31,10 +31,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>..\..\..\..\..\..\..\ProgramData\ESRI\ArcGIS Mobile\Extensions\</OutputPath>
-    <DefineConstants>TRACE;BROKEN_WHERE_GUID GPSINANCHORAGE</DefineConstants>
+    <DefineConstants>TRACE;BROKEN_WHERE_GUID GPSINJUNEAU</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
