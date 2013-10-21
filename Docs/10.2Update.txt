@@ -1,19 +1,14 @@
-ArcMobileDVD directory renamed ArcGIS_Windows_Mobile_1011_133385 (version may change) 
+ArcMobileDVD directory renamed ArcGIS_Windows_Mobile_102_134958 
 MachineData\AnimalObservations.dll is updated
-Delete UserData
+Delete UserData folder
 Create MobileProject directory
  (This is now the master copy of the mobile project)
- the GLBA_Cache folder (.99GB) should be located in this folder)
- all the other files are new (some are copies of files from old UserData folder)
+ moved the GLBA_Cache folder (.99GB imagery) from UserData subfolder to this folder
+ these files are similar to the old UserData folder, but 
  they have been developed for and tested with ArcMobile 10.2
 Script folder is updated with new versions for 10.2 
-Source Code in Docs directory has been updated
+Source Code and documentation file in Docs directory has been updated
 Murrelet.gdb is a new copy of empty database from SEAN on 2013-07-21, it has been slightly
   modified in the copy (field order in Tracks is different - Shape_Length went to end),
   this required a change to the CSV Export code which has column indexes hard coded.
 Edited definition query in Murrelets (sync).mxd to display Transects for 2014
-
-To do:
-edit help to document how to set ArcGIS Mobile to open projects C:\KIMU
-edit help to document double clicking C:\KIMU\MobileProject\murrelet.amp
-
