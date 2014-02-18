@@ -7,13 +7,13 @@ using System.Linq;
 using System.Text;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
-using ESRI.ArcGIS.Mobile.MobileServices;
+using ESRI.ArcGIS.Mobile.FeatureCaching;
 
 namespace AnimalObservations
 {
     public class Observation
     {
-        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Observations");
+        private static readonly FeatureSource FeatureSource = MobileUtilities.GetFeatureSource("Observations");
         private static readonly Dictionary<Guid, Observation> Observations = new Dictionary<Guid, Observation>();
 
         private Feature Feature { get; set; }
@@ -77,11 +77,11 @@ namespace AnimalObservations
             if (Observations.ContainsKey(guid))
                 return Observations[guid];
 #if BROKEN_WHERE_GUID
-            int columnIndex = FeatureLayer.Columns.IndexOf("ObservationID");
-            Observation observation = FromFeature(MobileUtilities.GetFeature(FeatureLayer, guid, columnIndex));
+            int columnIndex = FeatureSource.Columns.IndexOf("ObservationID");
+            Observation observation = FromFeature(MobileUtilities.GetFeature(FeatureSource, guid, columnIndex));
 #else
             string whereClause = string.Format("ObservationID = {{{0}}}", guid);
-            Observation observation = FromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+            Observation observation = FromFeature(MobileUtilities.GetFeature(FeatureSource, whereClause));
 #endif
             if (observation != null && observation.GpsPoint == null)
                 throw new ApplicationException("Existing observation has no gps point");
@@ -94,7 +94,7 @@ namespace AnimalObservations
                 throw new ArgumentNullException("gpsPoint");
 
             //May throw an exception, but should never return null
-            var observation = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var observation = FromFeature(MobileUtilities.CreateNewFeature(FeatureSource));
             observation.GpsPoint = gpsPoint;
             return observation;
         }
@@ -106,9 +106,9 @@ namespace AnimalObservations
                 throw new ArgumentNullException("extents");
 
             return Observations.Values.FirstOrDefault(obs => IsWithin(obs, extents)) ??
-                   FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+                   FromFeature(MobileUtilities.GetFeature(FeatureSource, extents));
             //return Observations.Values.FirstOrDefault(obs => obs.Feature.FeatureDataRow.Geometry.Within(extents)) ??
-            //       FromFeature(MobileUtilities.GetFeature(FeatureLayer, extents));
+            //       FromFeature(MobileUtilities.GetFeature(FeatureSource, extents));
         }
 
         private static bool IsWithin(Observation obs, Envelope extents)

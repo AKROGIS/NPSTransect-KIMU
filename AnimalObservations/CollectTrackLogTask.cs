@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -10,6 +9,8 @@ using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
 using ESRI.ArcGIS.Mobile.WPF;
+using MessageBox = ESRI.ArcGIS.Mobile.Client.Windows.MessageBox;
+using Point = System.Drawing.Point;
 
 //TODO - explore using ESRI.ArcGIS.Mobile.WPF.GpsDisplay
 //TODO - using locking so GPS events can be processed correctly on the GPS thread.
@@ -75,22 +76,22 @@ namespace AnimalObservations
             if (DatabaseSchemaIsInvalid)
                 return;
 
-            var mapExtents = MobileApplication.Current.Map.GetExtent();
+            var mapExtents = MobileApplication.Current.Map.Extent;
             if (mapExtents == null)
             {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                MessageBox.ShowDialog(
                     "Unable to determine extents of the map.", "Unexpected Error",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             RefreshNearbyTransects();
             if (NearbyTransects.Count < 1)
             {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                MessageBox.ShowDialog(
                     "No transects could be found within the visible map. " +
                     "Either zoom out or wait until a transect comes into view. " + 
                     "Make sure the GPS is on and the map is tracking your location.", "No Transects Found",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 #if TESTINGWITHOUTGPS
@@ -98,10 +99,10 @@ namespace AnimalObservations
 #else
             if (!_gpsConnection.IsOpen || MostRecentLocation == null)
             {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                MessageBox.ShowDialog(
                     "GPS is disconnected or doesn't yet have a fix on the satellites. " +
                     "Correct the problems with the GPS and try again.", "No GPS Fix",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 #endif
@@ -120,7 +121,7 @@ namespace AnimalObservations
 
         internal void RefreshNearbyTransects()
         {
-            Envelope mapExtents = MobileApplication.Current.Map.GetExtent();
+            Envelope mapExtents = MobileApplication.Current.Map.Extent;
             bool transectsAreNearby = (Transect.GetWithin(mapExtents).FirstOrDefault() != null);
             //Leave the list unchanged if there are no nearby transects.
             //We don't want the pick list to go blank if we are changing tracklog properties in the
@@ -158,8 +159,11 @@ namespace AnimalObservations
             else
             {
                 IsRecording = true;
+                CurrentTrackLog.StartingTime = DateTime.Now;
                 //Collect our first point now, don't wait for an event. 
                 SaveGpsPoint();
+                //At this time the tracklog geometry is invalid, so we don't bother saving it.
+                //The tracklog will save itself as soon as it has two points. 
                 CurrentTrackLog.PropertyChanged +=
                     (sender, args) => { if (args.PropertyName == "TooBig") RestartTrackLog(); };
             }
@@ -181,7 +185,7 @@ namespace AnimalObservations
 #if !TESTINGWITHOUTGPS
             //Save any outstanding changes
             if (!PostChanges())
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog("Error saving changes", "Save Failed");
+                MessageBox.ShowDialog("Error saving changes", "Save Failed");
 #endif
             //Close any open observations
             while (ActiveObservation != null)
@@ -356,11 +360,11 @@ namespace AnimalObservations
                 return;
             }
 
-            ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+            MessageBox.ShowDialog(
                 "An error (" + e.Exception.Message + ") was encountered processing the GPS data. " +
                 "Data has been saved and the GPS has been closed.",
                 "GPS Error",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBoxButton.OK, MessageBoxImage.Error);
             _gpsConnection.Close();
         }
 
@@ -461,7 +465,7 @@ namespace AnimalObservations
             _boat = new Image
                         {
                             Source = new BitmapImage(uri), 
-                            Margin = new System.Windows.Thickness(-100, -100, 0, 0)
+                            Margin = new Thickness(-100, -100, 0, 0)
                         };
 
             // add graphic layer
@@ -487,7 +491,7 @@ namespace AnimalObservations
             //pan map to center boat location
             if (AutoPan)
             {
-                Envelope env = MobileApplication.Current.Map.GetExtent();
+                Envelope env = MobileApplication.Current.Map.Extent;
                 env = env.Resize(0.7);
                 if (!env.Contains(location))
                     MobileApplication.Current.Map.CenterAt(location);
@@ -495,7 +499,7 @@ namespace AnimalObservations
 
             //heading = 0 is north (up); heading is in degrees clockwise
             //image without rotation is pointing E (270 degrees).
-            System.Drawing.Point point = MobileApplication.Current.Map.ToClient(location);
+            Point point = MobileApplication.Current.Map.ToClient(location);
             if (heading > 180)
                 _boat.LayoutTransform = new RotateTransform(heading + 90.0);
             else
@@ -505,7 +509,7 @@ namespace AnimalObservations
                 transformGroup.Children.Add(new RotateTransform(heading - 90.0));
                 _boat.LayoutTransform = transformGroup;
             }
-            _boat.Margin = new System.Windows.Thickness(point.X-24, point.Y-30, 0, 0);
+            _boat.Margin = new Thickness(point.X-24, point.Y-30, 0, 0);
         }
 
         #endregion
@@ -516,7 +520,6 @@ namespace AnimalObservations
         private void ValidateDatabaseSchema()
         {
             _validDb = !TestDatabaseSchema();
-            return;
         }
 
         private bool DatabaseSchemaIsInvalid
@@ -543,12 +546,12 @@ namespace AnimalObservations
                 Transect transect = Transect.AllTransects.FirstOrDefault();
                 if (transect == null)
                 {
-                    ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                    MessageBox.ShowDialog(
                         "Field work cannot proceed until\n" +
                         "transects are downloaded to the\n" +
                         "mobile cache.",
                         "No Transects Found",
-                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                     return false;
                 }
                 //Initialize other classes
@@ -565,18 +568,18 @@ namespace AnimalObservations
             }
             catch (TypeInitializationException ex)
             {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                MessageBox.ShowDialog(
                     errorMsg + ex.InnerException.Message,
                     "Invalid Database",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
             catch (Exception ex)
             {
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(
+                MessageBox.ShowDialog(
                     errorMsg + ex.Message,
                     "Invalid Database",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }

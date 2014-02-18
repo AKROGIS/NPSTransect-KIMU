@@ -1,6 +1,0 @@
-﻿<Extensions>
-  <Tasks>
-	  <Task assemblyQualifiedName="AnimalObservations.ReviewTransectsTask,AnimalObservations"/>
-	  <Task assemblyQualifiedName="AnimalObservations.CollectTrackLogTask,AnimalObservations"/>
-  </Tasks>
-</Extensions>

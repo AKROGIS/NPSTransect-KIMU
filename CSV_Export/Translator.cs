@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using ESRI.ArcGIS;
 using ESRI.ArcGIS.ADF;  //for ComReleaser, requires ESRI.ArcGIS.ADF.Connection.Local.dll
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;  // For Shape coordiantes
@@ -44,7 +45,8 @@ namespace CSV_Export
             var endDate = new DateTime(Year + 1, 1, 1);
             string dateWhereClause = string.Format(
                 "\"{0}\" >= date '{1}' AND \"{0}\" < date '{2}'",
-                "GpsPoints.Time_local",
+                //"GpsPoints.Time_local", //Bizzare, with 10.2, the table prefix for a field in a join is not required.
+                "Time_local",
                 startDate.ToString("yyyy-MM-dd HH:mm:ss"),
                 endDate.ToString("yyyy-MM-dd HH:mm:ss")
                 );
@@ -139,10 +141,10 @@ namespace CSV_Export
                 IRow row;
                 while ((row = cursor.NextRow()) != null)
                 {
-                    string transect = row.Value[27].ToString();
-                    bool ontransect = Boolean.Parse(row.Value[29].ToString());
-                    string trackId = row.Value[26].ToString();
-                    var tracklength = (double)row.Value[15];
+                    string transect = row.Value[26].ToString();
+                    bool ontransect = Boolean.Parse(row.Value[28].ToString());
+                    string trackId = row.Value[25].ToString();
+                    var tracklength = (double)row.Value[29];
                     if (!lengths.ContainsKey(transect))
                         lengths[transect] = new Dictionary<string, double>();
                     //skip tracks I've already seen
@@ -169,24 +171,24 @@ namespace CSV_Export
                 {
                     var utm = (IPoint)row.Value[1];
                     var localDateTime = (DateTime) row.Value[6];
-                    var trackDateTime = (DateTime) row.Value[21];
+                    var trackDateTime = (DateTime) row.Value[20];
                     string date = localDateTime.ToString("yyyy-MM-dd");
                     string time = localDateTime.ToString("HH:mm:ss");
-                    string transect = row.Value[27].ToString();
+                    string transect = row.Value[26].ToString();
                     object gpsId = row.Value[13];
                     List<Observation> observationList = observationData.ContainsKey(gpsId) ? observationData[gpsId] : emptyObservationList;
                     foreach (var observation in observationList)
                     {
                         var sb = new StringBuilder();
-                        sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", transect, date, time, row.Value[17]);
-                        sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", row.Value[18], row.Value[19], row.Value[20], row.Value[25]);
-                        sb.AppendFormat("\"{0}\",{1},{2},{3},", row.Value[24], row.Value[23], row.Value[3], row.Value[4]);
+                        sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", transect, date, time, row.Value[16]);
+                        sb.AppendFormat("\"{0}\",\"{1}\",\"{2}\",\"{3}\",", row.Value[17], row.Value[18], row.Value[19], row.Value[24]);
+                        sb.AppendFormat("\"{0}\",{1},{2},{3},", row.Value[23], row.Value[22], row.Value[3], row.Value[4]);
                         sb.AppendFormat("{0},{1},{2},{3},", utm.X, utm.Y, row.Value[10], row.Value[11]);
                         sb.AppendFormat("{0},", observation.Data);
-                        sb.AppendFormat("\"{0}\",\"{1}\",{2},", row.Value[29], row.Value[28], row.Value[12]);
+                        sb.AppendFormat("\"{0}\",\"{1}\",{2},", row.Value[28], row.Value[27], row.Value[12]);
                         sb.AppendFormat("{0},{1},{2},{3},", row.Value[8], row.Value[7], transectLengths[transect], observation.Comment);
                         sb.Append(",,");
-                        lines.Add(new Line { Date = localDateTime, TrackDate = trackDateTime, Text = sb.ToString() });                        
+                        lines.Add(new Line { Date = localDateTime, TrackDate = trackDateTime, Text = sb.ToString() });
                     }
                 }
             }
@@ -205,7 +207,7 @@ namespace CSV_Export
         private static void GetArcGisLicense()
         {
             //requires ArcGIS 10+ and reference to ESRI.ArcGIS.Version.dll
-            ESRI.ArcGIS.RuntimeManager.BindLicense(ESRI.ArcGIS.ProductCode.EngineOrDesktop);
+            RuntimeManager.BindLicense(ProductCode.EngineOrDesktop);
         }
 
         private static Dictionary<object,List<Observation>> GetObservations(ITable table)

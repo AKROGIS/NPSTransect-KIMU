@@ -1,16 +1,14 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Globalization;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ESRI.ArcGIS.Mobile.Client;
 using Microsoft.Windows.Controls;
+using MessageBox = ESRI.ArcGIS.Mobile.Client.Windows.MessageBox;
 
 namespace AnimalObservations
 {
@@ -34,7 +32,7 @@ namespace AnimalObservations
             Note = "Edit the observation values";
             // page icon
             var uri = new Uri("pack://application:,,,/AnimalObservations;Component/duck-icon.png");
-            ImageSource = new System.Windows.Media.Imaging.BitmapImage(uri);
+            ImageSource = new BitmapImage(uri);
 
             var newObservationCommand = new PageNavigationCommand(
                 PageNavigationCommandType.Highlighted,
@@ -105,14 +103,14 @@ namespace AnimalObservations
         void NewObservationCommandExecute()
         {
             CommitEdit(dataGrid);
-            Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit changes.
+            Keyboard.Focus(dataGrid);  //Ensures that angle/distance, loose focus and commit changes.
 
             //FromGpsPoint() may throw exceptions, but that would be catastrophic, so let the app handle it.
             Task.AddObservationAsActive(Observation.FromGpsPoint(Task.CurrentGpsPoint));
             Keyboard.Focus(angleTextBox);
         }
 
-        private void CommitEdit(DataGrid dataGrid)
+        private static void CommitEdit(DataGrid dataGrid)
         {
             dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
             dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
@@ -144,7 +142,7 @@ namespace AnimalObservations
         protected override void OnOkCommandExecute()
         {
             CommitEdit(dataGrid);
-            Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
+            Keyboard.Focus(dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
 
             //If saving throws an exception, it is catastrophic, so let the app handle it
             bool saved = Task.ActiveObservation.CommitEdit();
@@ -165,7 +163,7 @@ namespace AnimalObservations
                 string msg2 = msg.ToString();
                 if (msg.Length == 0)
                     msg2 = "Problem is undefined.  Geometry may be out of bounds.";
-                ESRI.ArcGIS.Mobile.Client.Windows.MessageBox.ShowDialog(msg2, "Save Failed",MessageBoxButton.OK,MessageBoxImage.Error);
+                MessageBox.ShowDialog(msg2, "Save Failed",MessageBoxButton.OK,MessageBoxImage.Error);
             }
         }
 
@@ -182,7 +180,7 @@ namespace AnimalObservations
             {
                 e.Handled = true;
                 CommitEdit(dataGrid);
-                Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
+                Keyboard.Focus(dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
                 if (CanExecuteOkCommand())
                     OnOkCommandExecute();
                 return;
@@ -202,7 +200,7 @@ namespace AnimalObservations
             {
                 e.Handled = true;
                 CommitEdit(dataGrid);
-                Keyboard.Focus(this.dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
+                Keyboard.Focus(dataGrid);  //Ensures that angle/distance, loose focus and commit edits.
                 //Note if the edited value in the control is not valid, i.e. angle < 0, then the edits are discarded,
                 //and the control reverts to the previous value.
                 NewObservationCommandExecute();
@@ -239,13 +237,13 @@ namespace AnimalObservations
 
         private void DataGridCell_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            DataGridCell cell = sender as DataGridCell;
+            var cell = sender as DataGridCell;
             GridColumnFastEdit(cell, e);
         }
 
         private void DataGridCell_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            DataGridCell cell = sender as DataGridCell;
+            var cell = sender as DataGridCell;
             GridColumnFastEdit(cell, e);
         }
 
@@ -255,7 +253,7 @@ namespace AnimalObservations
             if (cell == null || cell.IsEditing || cell.IsReadOnly)
                 return;
 
-            DataGrid dataGrid = FindVisualParent<DataGrid>(cell);
+            var dataGrid = FindVisualParent<DataGrid>(cell);
             if (dataGrid == null)
                 return;
 
@@ -273,7 +271,7 @@ namespace AnimalObservations
                 }
                 else
                 {
-                    DataGridRow row = FindVisualParent<DataGridRow>(cell);
+                    var row = FindVisualParent<DataGridRow>(cell);
                     if (row != null && !row.IsSelected)
                     {
                         row.IsSelected = true;
@@ -282,7 +280,7 @@ namespace AnimalObservations
             }
             else
             {
-                ComboBox cb = cell.Content as ComboBox;
+                var cb = cell.Content as ComboBox;
                 if (cb != null)
                 {
                     //DataGrid dataGrid = FindVisualParent<DataGrid>(cell);
@@ -301,7 +299,7 @@ namespace AnimalObservations
             UIElement parent = element;
             while (parent != null)
             {
-                T correctlyTyped = parent as T;
+                var correctlyTyped = parent as T;
                 if (correctlyTyped != null)
                 {
                     return correctlyTyped;

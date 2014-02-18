@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
-using ESRI.ArcGIS.Mobile.MobileServices;
+using ESRI.ArcGIS.Mobile.FeatureCaching;
 
 namespace AnimalObservations
 {
     public class TrackLog: INotifyPropertyChanged
     {
-        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("Tracks");
+        private static readonly FeatureSource FeatureSource = MobileUtilities.GetFeatureSource("Tracks");
         private static readonly Dictionary<Guid, TrackLog> TrackLogs = new Dictionary<Guid, TrackLog>();
 
         //These are used in XAML data binding so they must be public properties
@@ -45,9 +45,9 @@ namespace AnimalObservations
         //Class Constructor
         static TrackLog()
         {
-            WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureLayer, "Weather");
-            VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureLayer, "Visibility");
-            BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureLayer, "Beaufort");
+            WeatherDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureSource, "Weather");
+            VisibilityDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureSource, "Visibility");
+            BeaufortDomain = MobileUtilities.GetCodedValueDictionary<int>(FeatureSource, "Beaufort");
         }
 
         //Instance Constructor  - not permitted, use static create/from methods.
@@ -61,11 +61,11 @@ namespace AnimalObservations
                 return TrackLogs[guid];
 
 #if BROKEN_WHERE_GUID
-            int columnIndex = FeatureLayer.Columns.IndexOf("TrackID");
-            TrackLog trackLog = FromFeature(MobileUtilities.GetFeature(FeatureLayer, guid, columnIndex));
+            int columnIndex = FeatureSource.Columns.IndexOf("TrackID");
+            TrackLog trackLog = FromFeature(MobileUtilities.GetFeature(FeatureSource, guid, columnIndex));
 #else
             string whereClause = string.Format("TrackID = '{{{0}}}'", guid);
-            TrackLog trackLog = FromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+            TrackLog trackLog = FromFeature(MobileUtilities.GetFeature(FeatureSource, whereClause));
 #endif
             if (trackLog != null && trackLog.Transect == null)
                 throw new ApplicationException("Existing track log has no transect");
@@ -78,7 +78,7 @@ namespace AnimalObservations
                 throw new ArgumentNullException("transect");
 
             //May throw an exception, but should never return null
-            var trackLog = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var trackLog = FromFeature(MobileUtilities.CreateNewFeature(FeatureSource));
             trackLog.Transect = transect;
             return trackLog;
         }
@@ -134,11 +134,10 @@ namespace AnimalObservations
                 Beaufort = (int)Feature.FeatureDataRow["Beaufort"];
             if (Feature.FeatureDataRow["Start"] is DateTime)
                 StartingTime = (DateTime)Feature.FeatureDataRow["Start"];
-            if (Feature.FeatureDataRow["End"] is DateTime)
-                FinishingTime = (DateTime)Feature.FeatureDataRow["End"];
+            if (Feature.FeatureDataRow["End_"] is DateTime)
+                FinishingTime = (DateTime)Feature.FeatureDataRow["End_"];
             if (Feature.FeatureDataRow["OnTransect"] is string)
                 OnTransect = ((string)Feature.FeatureDataRow["OnTransect"]) == "True";
-
         }
 
         private void LoadAttributes(TrackLog templateTrackLog)
@@ -191,7 +190,7 @@ namespace AnimalObservations
         private bool QuickSave()
         {
             FinishingTime = DateTime.Now;
-            Feature.FeatureDataRow["End"] = FinishingTime;     
+            Feature.FeatureDataRow["End_"] = FinishingTime;     
             return Feature.SaveEdits();
         }
 

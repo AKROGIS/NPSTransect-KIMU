@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
 using ESRI.ArcGIS.Mobile.Gps;
-using ESRI.ArcGIS.Mobile.MobileServices;
+using ESRI.ArcGIS.Mobile.FeatureCaching;
 
 namespace AnimalObservations
 {
     public class GpsPoint
     {
-        private static readonly FeatureLayer FeatureLayer = MobileUtilities.GetFeatureLayer("GpsPoints");
+        private static readonly FeatureSource FeatureSource = MobileUtilities.GetFeatureSource("GpsPoints");
         private static readonly Dictionary<Guid, GpsPoint> GpsPoints = new Dictionary<Guid, GpsPoint>();
 
         private Feature Feature { get; set; }
@@ -50,11 +50,11 @@ namespace AnimalObservations
                 return GpsPoints[guid];
 
 #if BROKEN_WHERE_GUID
-            int columnIndex = FeatureLayer.Columns.IndexOf("GpsPointID");
-            GpsPoint gpsPoint = FromFeature(MobileUtilities.GetFeature(FeatureLayer, guid, columnIndex));
+            int columnIndex = FeatureSource.Columns.IndexOf("GpsPointID");
+            GpsPoint gpsPoint = FromFeature(MobileUtilities.GetFeature(FeatureSource, guid, columnIndex));
 #else
             string whereClause = string.Format("GpsPointID = {{{0}}}", guid);
-            GpsPoint gpsPoint = FromFeature(MobileUtilities.GetFeature(FeatureLayer, whereClause));
+            GpsPoint gpsPoint = FromFeature(MobileUtilities.GetFeature(FeatureSource, whereClause));
 #endif
             if (gpsPoint != null && gpsPoint.TrackLog == null)
                 throw new ApplicationException("Existing gps point has no track log");
@@ -72,7 +72,7 @@ namespace AnimalObservations
                 throw new InvalidOperationException("GPS connection is closed");
 #endif
             //May throw an exception, but should never return null
-            var gpsPoint = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var gpsPoint = FromFeature(MobileUtilities.CreateNewFeature(FeatureSource));
             gpsPoint.TrackLog = trackLog;
             gpsPoint.LoadAttributes(gpsConnection);
             return gpsPoint;
@@ -85,7 +85,7 @@ namespace AnimalObservations
                 throw new ArgumentNullException("trackLog");
 
             //May throw an exception, but should never return null
-            var gpsPoint = FromFeature(MobileUtilities.CreateNewFeature(FeatureLayer));
+            var gpsPoint = FromFeature(MobileUtilities.CreateNewFeature(FeatureSource));
             gpsPoint.TrackLog = trackLog;
             return gpsPoint;
         }

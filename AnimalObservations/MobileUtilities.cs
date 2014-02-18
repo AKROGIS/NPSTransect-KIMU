@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
-using ESRI.ArcGIS.Mobile;
 using ESRI.ArcGIS.Mobile.Client;
 using ESRI.ArcGIS.Mobile.Geometries;
-using ESRI.ArcGIS.Mobile.MobileServices;
+using ESRI.ArcGIS.Mobile.FeatureCaching;
 
 namespace AnimalObservations
 {
@@ -14,21 +13,21 @@ namespace AnimalObservations
     {
         internal const int SearchRadius = 2; //mm in display units (based on map scale) on each side of cursor point to search
 
-        internal static FeatureLayer GetFeatureLayer(string featureLayerName)
+        internal static FeatureSource GetFeatureSource(string featureSourceName)
         {
-             foreach (var layer in MobileApplication.Current.Project.EnumerateFeatureLayers())
-                if (layer.ServerFeatureClassName == featureLayerName)
+             foreach (var layer in MobileApplication.Current.Project.EnumerateFeatureSources())
+                if (layer.ServerFeatureClassName == featureSourceName)
                     return layer;
-            throw new InvalidOperationException("Feature data set '" + featureLayerName + "' not found." );
+            throw new InvalidOperationException("Feature data set '" + featureSourceName + "' not found." );
         }
 
         #region Create New Features
 
-        internal static Feature CreateNewFeature(FeatureLayer featureLayer, int subTypeIndex = 0)
+        internal static Feature CreateNewFeature(FeatureSource featureSource, int subTypeIndex = 0)
         {
-            if (subTypeIndex < 0 || subTypeIndex >= MobileApplication.Current.Project.FeatureTypeDictionary[featureLayer].Count)
+            if (subTypeIndex < 0 || subTypeIndex >= MobileApplication.Current.Project.FeatureTypeDictionary[featureSource].Count)
                 throw new ArgumentOutOfRangeException("subTypeIndex");
-            FeatureType featureType = MobileApplication.Current.Project.FeatureTypeDictionary[featureLayer][subTypeIndex];
+            FeatureType featureType = MobileApplication.Current.Project.FeatureTypeDictionary[featureSource][subTypeIndex];
             return new Feature(featureType);
         }
 
@@ -39,10 +38,10 @@ namespace AnimalObservations
 
 #if BROKEN_WHERE_GUID
         //workaround for broken where clause on guid
-        internal static Feature GetFeature(FeatureLayer featureLayer, Guid guid, int columnIndex)
+        internal static Feature GetFeature(FeatureSource featureSource, Guid guid, int columnIndex)
         {
-            Trace.TraceInformation("feature layer: {0}; guid: {1}; column: {2}", featureLayer, guid, columnIndex);
-            FeatureDataTable table = featureLayer.GetDataTable(null);
+            Trace.TraceInformation("feature layer: {0}; guid: {1}; column: {2}", featureSource, guid, columnIndex);
+            FeatureDataTable table = featureSource.GetDataTable(null);
             Trace.TraceInformation("found: {0}; row count = {1}", table != null, table == null ? 0 : table.Rows.Count);
             if (table == null)
                 return null;
@@ -54,10 +53,10 @@ namespace AnimalObservations
             return (match == null) ? null : new Feature(match);
         }
 
-        internal static IEnumerable<FeatureDataRow> GetFeatureRows(FeatureLayer featureLayer, Guid guid, int columnIndex)
+        internal static IEnumerable<FeatureDataRow> GetFeatureRows(FeatureSource featureSource, Guid guid, int columnIndex)
         {
-            Trace.TraceInformation("feature layer: {0}; guid: {1}; column: {2}", featureLayer, guid, columnIndex);
-            FeatureDataTable table = featureLayer.GetDataTable(null);
+            Trace.TraceInformation("feature layer: {0}; guid: {1}; column: {2}", featureSource, guid, columnIndex);
+            FeatureDataTable table = featureSource.GetDataTable(null);
             Trace.TraceInformation("found: {0}; row count = {1}", table != null, table == null ? 0 : table.Rows.Count);
             if (table == null)
                 return null;
@@ -67,33 +66,40 @@ namespace AnimalObservations
                    select row;
         }
 #else
-        internal static Feature GetFeature(FeatureLayer featureLayer, string whereClause)
+        internal static Feature GetFeature(FeatureSource featureSource, string whereClause)
         {
-            return GetFeatures(featureLayer, whereClause).FirstOrDefault();
-        }
-#endif
-        internal static Feature GetFeature(FeatureLayer featureLayer, Envelope extents)
-        {
-            return GetFeatures(featureLayer, extents).FirstOrDefault();
+            return GetFeatures(featureSource, whereClause).FirstOrDefault();
         }
 
-        internal static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, string whereClause)
+        internal static IEnumerable<FeatureDataRow> GetFeatureRows(FeatureSource featureSource, string whereClause)
         {
             var query = new QueryFilter(whereClause);
-            return GetFeatures(featureLayer, query);
+            FeatureDataTable table = featureSource.GetDataTable(query);
+            return (table == null) ? null : table.Rows.Cast<FeatureDataRow>();
+        }
+#endif
+        internal static Feature GetFeature(FeatureSource featureSource, Envelope extents)
+        {
+            return GetFeatures(featureSource, extents).FirstOrDefault();
         }
 
-        internal static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, Envelope extents)
+        internal static IEnumerable<Feature> GetFeatures(FeatureSource featureSource, string whereClause)
+        {
+            var query = new QueryFilter(whereClause);
+            return GetFeatures(featureSource, query);
+        }
+
+        internal static IEnumerable<Feature> GetFeatures(FeatureSource featureSource, Envelope extents)
         {
             var query = new QueryFilter(extents, GeometricRelationshipType.Contain);
-            return GetFeatures(featureLayer, query);
+            return GetFeatures(featureSource, query);
         }
 
-        private static IEnumerable<Feature> GetFeatures(FeatureLayer featureLayer, QueryFilter query)
+        private static IEnumerable<Feature> GetFeatures(FeatureSource featureSource, QueryFilter query)
         {
-            Trace.TraceInformation("feature layer {0}; query {1} and {2} {3}", featureLayer, query.WhereClause, query.GeometricRelationship, query.Geometry);
+            Trace.TraceInformation("feature layer {0}; query {1} and {2} {3}", featureSource, query.WhereClause, query.GeometricRelationship, query.Geometry);
             //If query.WhereClause is invalid 'SQL' then invalid operation exception is thrown 'Operation is not valid due to the current state of the object.' message
-            FeatureDataTable table = featureLayer.GetDataTable(query);
+            FeatureDataTable table = featureSource.GetDataTable(query);
             Trace.TraceInformation("found {0}; count {1}", table != null, table == null ? 0 : table.Rows.Count);
             if (table == null)
                 return Enumerable.Empty<Feature>();
@@ -105,9 +111,9 @@ namespace AnimalObservations
 
         #region domains/picklist
 
-        public static IDictionary<T, string> GetCodedValueDictionary<T>(FeatureLayer featureLayer, string field)
+        public static IDictionary<T, string> GetCodedValueDictionary<T>(FeatureSource featureSource, string field)
         {
-            return GetCodedValueDictionary<T>(GetCodedValueDomain(featureLayer, field));
+            return GetCodedValueDictionary<T>(GetCodedValueDomain(featureSource, field));
         }
 
         private static IDictionary<T, string> GetCodedValueDictionary<T>(CodedValueDomain cvd)
@@ -120,9 +126,9 @@ namespace AnimalObservations
             return domain;
         }
 
-        private static CodedValueDomain GetCodedValueDomain(FeatureLayer featureLayer, string field, int subType = 0)
+        private static CodedValueDomain GetCodedValueDomain(FeatureSource featureSource, string field, int subType = 0)
         {
-            return featureLayer.GetDomain(subType, field) as CodedValueDomain;
+            return featureSource.Columns[field].GetDomain(subType) as CodedValueDomain;
         }
 
         #endregion
